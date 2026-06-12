@@ -265,10 +265,47 @@ app.post('/api/auth/logout', (req, res) => {
 // Keep track of active codex processes by session UUID
 const activeProcesses = new Map();
 
-// Active workspace directory. Default to INITIAL_WORKSPACE if provided, else process.cwd()
-let activeWorkspace = process.env.INITIAL_WORKSPACE ? path.resolve(process.env.INITIAL_WORKSPACE) : process.cwd();
-const workspacesParentDir = path.resolve(process.env.QEXOW_WORKSPACES_DIR || path.dirname(process.cwd()));
-console.log('[Server] Workspaces parent directory:', workspacesParentDir);
+// Active workspaces directory and active workspace path
+const QEXOW_MAIN_DIR = path.resolve(process.env.QEXOW_MAIN_DIR || path.join(os.homedir(), 'Qexow'));
+const workspacesParentDir = QEXOW_MAIN_DIR;
+let activeWorkspace = '';
+
+async function initWorkspaces() {
+  try {
+    await fs.mkdir(QEXOW_MAIN_DIR, { recursive: true });
+    console.log('[Server] Main workspaces directory:', QEXOW_MAIN_DIR);
+
+    const entries = await fs.readdir(QEXOW_MAIN_DIR, { withFileTypes: true });
+    let folders = entries
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name)
+      .filter(name => !['node_modules', '.git', '__pycache__', 'dist', 'dist_electron', 'output'].includes(name));
+
+    if (folders.length === 0) {
+      const defaultWS = path.join(QEXOW_MAIN_DIR, 'default-workspace');
+      await fs.mkdir(defaultWS, { recursive: true });
+      folders = ['default-workspace'];
+      console.log('[Server] Created default workspace at:', defaultWS);
+    }
+
+    if (process.env.INITIAL_WORKSPACE) {
+      const resolvedInit = path.resolve(process.env.INITIAL_WORKSPACE);
+      if (resolvedInit.startsWith(QEXOW_MAIN_DIR)) {
+        activeWorkspace = resolvedInit;
+      }
+    }
+
+    if (!activeWorkspace) {
+      activeWorkspace = path.join(QEXOW_MAIN_DIR, folders[0]);
+    }
+
+    console.log('[Server] Active workspace set to:', activeWorkspace);
+  } catch (err) {
+    console.error('[Server] Failed to initialize workspaces:', err);
+    activeWorkspace = path.join(QEXOW_MAIN_DIR, 'default-workspace');
+  }
+}
+
 
 let initialFileToOpen = process.env.INITIAL_FILE ? path.resolve(process.env.INITIAL_FILE) : null;
 
@@ -868,7 +905,8 @@ app.use((req, res) => {
 });
 
 // Allow running standalone (node server.js) or imported by main.js
-export function startServer(port) {
+export async function startServer(port) {
+  await initWorkspaces();
   const listenPort = port || PORT;
   return new Promise((resolve) => {
     app.listen(listenPort, () => {
