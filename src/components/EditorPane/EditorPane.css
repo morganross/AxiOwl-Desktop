@@ -257,3 +257,81 @@
   line-height: 1.5;
   font-family: var(--font-sans, inherit);
 }
+
+/* ── Split Editor Layout (Editor + Files Bottom Pane) ── */
+.editor-pane-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d10;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+.editor-view-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-files-section {
+  height: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0b0b0e;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 0;
+}
+.editor-files-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #0f0f13;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+.editor-files-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+.editor-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: #8b8fa8;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  user-select: none;
+}
+.editor-file-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e6f0;
+}
+.editor-file-item .file-icon {
+  flex-shrink: 0;
+  color: #3b82f6;
+  opacity: 0.8;
+}
+.editor-file-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.no-files-hint {
+  padding: 12px 6px;
+  font-size: 0.74rem;
+  color: #5a5d75;
+  font-style: italic;
+}

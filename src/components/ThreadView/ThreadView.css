@@ -623,3 +623,28 @@
 .spin {
   animation: spin 0.9s linear infinite;
 }
+
+/* ── Inline Token Usage and Model Info under input ── */
+.chat-input-usage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.65;
+  margin-top: 0.15rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  user-select: none;
+}
+.chat-usage-model {
+  color: #60a5fa;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+.chat-usage-divider {
+  opacity: 0.4;
+}
+.chat-usage-tokens, .chat-usage-remaining {
+  font-weight: 400;
+}

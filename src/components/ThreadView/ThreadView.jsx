@@ -213,7 +213,7 @@ const ThreadContent = ({ onSelectPrompt }) => {
   );
 };
 
-export default function ThreadView({ activeSession, sessions, onFileOpen, onTerminalOutput, activeFileContent, activeFilePath, lastTerminalOutputRef, onDiffReceived, onSessionCreated, onSessionFinished, onModelInfoChanged, onTokenUsageUpdated }) {
+export default function ThreadView({ activeSession, sessions, onFileOpen, onTerminalOutput, activeFileContent, activeFilePath, lastTerminalOutputRef, onDiffReceived, onSessionCreated, onSessionFinished, onModelInfoChanged, onTokenUsageUpdated, activeModel, activeContextWindow, activeSessionUsage }) {
   const [isTyping, setIsTyping] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('New Thread');
   const [inputValue, setInputValue] = useState('');
@@ -696,6 +696,13 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
                   ? 'Agent is working…'
                   : 'Powered by Qexow · Type "Approve" to authorize actions'}
               </p>
+              <div className="chat-input-usage">
+                <span className="chat-usage-model">{activeModel || 'gpt-5.4-mini'}</span>
+                <span className="chat-usage-divider">·</span>
+                <span className="chat-usage-tokens">{(activeSessionUsage || 0).toLocaleString()} / {(activeContextWindow || 272000).toLocaleString()} tokens</span>
+                <span className="chat-usage-divider">·</span>
+                <span className="chat-usage-remaining">{Math.max(0, (activeContextWindow || 272000) - (activeSessionUsage || 0)).toLocaleString()} remaining</span>
+              </div>
             </div>
           </div>
         </ThreadPrimitive.Root>

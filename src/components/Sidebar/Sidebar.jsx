@@ -11,11 +11,10 @@ function formatResetTime(seconds) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
-export default function Sidebar({ sessions, activeSession, onSelectSession, userInfo, onLogout, activeModel, activeContextWindow, activeSessionUsage, quotaInfo, onFileOpen, onWorkspaceChange, refreshTrigger }) {
+export default function Sidebar({ sessions, activeSession, onSelectSession, userInfo, onLogout, quotaInfo, onWorkspaceChange }) {
   console.log('[Sidebar] rendering with sessions:', sessions.map(s => s.title));
   const [workspaceName, setWorkspaceName] = useState('Loading...');
   const [workspaceRoot, setWorkspaceRoot] = useState('');
-  const [files, setFiles] = useState([]);
   const [isBuilding, setIsBuilding] = useState(false);
   const [workspaces, setWorkspaces] = useState([]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
@@ -30,16 +29,11 @@ export default function Sidebar({ sessions, activeSession, onSelectSession, user
         setWorkspaces(data.workspaces || []);
       })
       .catch(err => setWorkspaceName('Unknown Workspace'));
-
-    fetch('/api/workspace/files')
-      .then(res => res.json())
-      .then(data => setFiles(data))
-      .catch(err => setFiles([]));
   };
 
   useEffect(() => {
     refreshWorkspaceData();
-  }, [refreshTrigger]);
+  }, []);
 
   const handleWorkspaceSelect = (name) => {
     fetch('/api/workspace/select', {
@@ -192,45 +186,11 @@ export default function Sidebar({ sessions, activeSession, onSelectSession, user
             )}
           </ul>
         </div>
-
-        <div className="section">
-          <h3 className="section-title">Files</h3>
-          <ul className="item-list" style={{maxHeight: '200px', overflowY: 'auto'}}>
-            {files.map(file => (
-            <li
-              key={file}
-              className="item"
-              title={file}
-              onClick={() => {
-                if (onFileOpen) {
-                  // Build absolute path: workspace root + separator + relative path
-                  const sep = workspaceRoot.includes('\\') ? '\\' : '/';
-                  const absPath = workspaceRoot
-                    ? workspaceRoot.replace(/[\\/]+$/, '') + sep + file.replace(/\//g, sep)
-                    : file;
-                  onFileOpen(absPath);
-                }
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-                <FileCode size={14} className="file-icon" style={{marginRight: '8px', opacity: 0.7}} />
-                <span style={{overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
-                  {file.split('/').pop()}
-                </span>
-              </li>
-            ))}
-            {files.length === 0 && (
-              <li className="item" style={{opacity: 0.5}}>
-                <span>No files found</span>
-              </li>
-            )}
-          </ul>
-        </div>
       </div>
 
       {/* Usage Meter and Quota Display in the Bottom-Left */}
       <div className="sidebar-usage-region">
-        <h3 className="usage-title">Quota &amp; Context Usage</h3>
+        <h3 className="usage-title">Quota Usage</h3>
 
         {/* 5-Hour Rolling Window */}
         <div className="quota-meter-label-row">
@@ -283,21 +243,6 @@ export default function Sidebar({ sessions, activeSession, onSelectSession, user
             Resets in {formatResetTime(quotaInfo.secondaryResetSeconds)}
           </span>
         )}
-
-        {/* Context Window */}
-        <div className="usage-info-row" style={{ marginTop: '0.6rem' }}>
-          <span className="usage-label" style={{ textTransform: 'lowercase' }}>{activeModel || 'gpt-5.4-mini'}</span>
-          <span className="usage-value">{(activeSessionUsage || 0).toLocaleString()} / {(activeContextWindow || 272000).toLocaleString()}</span>
-        </div>
-        <div className="usage-progress-container">
-          <div
-            className="usage-progress-bar"
-            style={{ width: `${Math.min(100, Math.max(0, ((activeSessionUsage || 0) / (activeContextWindow || 272000)) * 100))}%` }}
-          />
-        </div>
-        <span className="usage-text-muted">
-          {Math.max(0, (activeContextWindow || 272000) - (activeSessionUsage || 0)).toLocaleString()} tokens remaining
-        </span>
       </div>
 
       {userInfo && (

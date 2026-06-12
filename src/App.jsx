@@ -343,16 +343,11 @@ function App() {
             onSelectSession={setActiveSession}
             userInfo={userInfo}
             onLogout={handleLogout}
-            activeModel={activeModel}
-            activeContextWindow={activeContextWindow}
-            activeSessionUsage={activeSessionUsage}
             quotaInfo={quotaInfo}
-            onFileOpen={handleFileOpen}
             onWorkspaceChange={() => {
               setOpenFiles([]);
               setActiveFilePath(null);
             }}
-            refreshTrigger={workspaceRefreshTrigger}
           />
         </div>
         <div className="main-region">
@@ -390,6 +385,9 @@ function App() {
             onTokenUsageUpdated={(usage) => {
               setActiveSessionUsage(usage);
             }}
+            activeModel={activeModel}
+            activeContextWindow={activeContextWindow}
+            activeSessionUsage={activeSessionUsage}
           />
         </div>
         <div className="review-region">
@@ -399,6 +397,8 @@ function App() {
             onTabSelect={setActiveFilePath}
             onTabClose={handleTabClose}
             onFileSave={handleFileSave}
+            onFileOpen={handleFileOpen}
+            refreshTrigger={workspaceRefreshTrigger}
           />
         </div>
       </div>
