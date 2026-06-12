@@ -863,6 +863,18 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Qexow App Server running on http://localhost:${PORT}`);
-});
+// Allow running standalone (node server.js) or imported by main.js
+export function startServer(port) {
+  const listenPort = port || PORT;
+  return new Promise((resolve) => {
+    app.listen(listenPort, () => {
+      console.log(`Qexow App Server running on http://localhost:${listenPort}`);
+      resolve(listenPort);
+    });
+  });
+}
+
+// When run directly (not imported), start immediately
+if (process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
+  startServer(PORT);
+}

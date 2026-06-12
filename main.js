@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import os from 'os';
 import net from 'net';
 import { promisify } from 'util';
+import { startServer } from './server.js';
 
 const execAsync = promisify(exec);
 
@@ -14,7 +15,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
-let serverProcess = null;
+// serverProcess is no longer needed — server runs in-process via startServer()
 
 // Disable hardware acceleration to resolve potential rendering glitches in VM environments
 app.disableHardwareAcceleration();
@@ -37,32 +38,7 @@ function getFreePort(startPort) {
   });
 }
 
-// Start the Express backend server on a specific port with optional workspace & file context
-function startBackendServer(port, initialWorkspace, initialFile) {
-  const serverPath = path.join(__dirname, 'server.js');
-  console.log(`[Electron Main] Starting background Express server at: ${serverPath} on port ${port}`);
-  
-  const env = { ...process.env, PORT: String(port) };
-  if (initialWorkspace) env.INITIAL_WORKSPACE = initialWorkspace;
-  if (initialFile) env.INITIAL_FILE = initialFile;
-
-  serverProcess = spawn('node', [serverPath], {
-    env,
-    shell: false
-  });
-
-  serverProcess.stdout.on('data', (data) => {
-    console.log(`[Express stdout]: ${data}`);
-  });
-
-  serverProcess.stderr.on('data', (data) => {
-    console.error(`[Express stderr]: ${data}`);
-  });
-
-  serverProcess.on('close', (code) => {
-    console.log(`[Express] server exited with code ${code}`);
-  });
-}
+// Backend server is now started in-process via startServer() imported from server.js
 
 function getPathFromArgs(argv) {
   for (const arg of argv) {
@@ -339,8 +315,15 @@ if (!gotTheLock) {
     // Register Windows context menu
     await registerContextMenu();
 
-    // Always boot the server on startup with initial args
-    startBackendServer(port, initialWorkspace, initialFile);
+    // Inject workspace/file context into process.env before starting server in-process
+    if (initialWorkspace) process.env.INITIAL_WORKSPACE = initialWorkspace;
+    if (initialFile) process.env.INITIAL_FILE = initialFile;
+    process.env.PORT = String(port);
+
+    // Start Express server in-process (works in packaged EXE — no external node needed)
+    await startServer(port);
+    console.log(`[Electron Main] In-process Express server started on port ${port}`);
+
     createWindow(port, state);
     await createTray();
     registerGlobalShortcut();
@@ -354,22 +337,12 @@ if (!gotTheLock) {
 }
 
 app.on('window-all-closed', () => {
-  // Terminate backend process when Electron exits
-  if (serverProcess) {
-    console.log('[Electron Main] Terminating backend server...');
-    serverProcess.kill();
-    serverProcess = null;
-  }
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('will-quit', () => {
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
-  }
   globalShortcut.unregisterAll();
 });
 
