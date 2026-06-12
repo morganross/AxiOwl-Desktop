@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "start": "node server.js",
     "electron-start": "electron .",
-    "package:win": "npm run build && electron-builder --win"
+    "package:win": "npm run build && electron-builder --win --publish never"
   },
   "dependencies": {
     "@assistant-ui/react": "^0.14.16",
