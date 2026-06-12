@@ -32,7 +32,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         setIsLoggingIn(false);
       }
     } catch (err) {
-      setError('Network error. Could not reach Codex server.');
+      setError('Network error. Could not reach backend server.');
       setIsLoggingIn(false);
     }
   };
@@ -44,7 +44,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           <div className="logo-container">
             <Command size={48} className="logo-icon" />
           </div>
-          <h1>Welcome to Codex</h1>
+          <h1>Welcome to Qexow</h1>
           <p>Login with OAuth to start a secure conversation.</p>
         </div>
         
@@ -81,7 +81,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         )}
         
         <div className="login-footer">
-          Powered by Codex Desktop Engine
+          Powered by Qexow Desktop Engine
         </div>
       </div>
     </div>

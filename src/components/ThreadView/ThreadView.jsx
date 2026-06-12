@@ -132,8 +132,8 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
     },
     {
       title: "Verify system status",
-      desc: "Runs a diagnostic test of the local Codex process",
-      prompt: "run a diagnostic status check on codex",
+      desc: "Runs a diagnostic test of the local backend process",
+      prompt: "run a diagnostic status check",
       icon: <Terminal size={20} className="suggestion-icon status" />
     },
     {
@@ -157,7 +157,7 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
           <Terminal size={32} className="welcome-logo-icon" />
         </div>
         <h1 className="welcome-title">How can I help you today?</h1>
-        <p className="welcome-subtitle">Ask Codex to write code, modify files, or execute CLI tasks.</p>
+        <p className="welcome-subtitle">Ask Qexow to write code, modify files, or execute CLI tasks.</p>
       </div>
       <div className="suggestions-grid animate-fade-in-delayed">
         {suggestions.map((s, idx) => (
@@ -671,7 +671,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
                 <textarea
                   ref={textareaRef}
                   className="chat-textarea"
-                  placeholder="Message Codex… (Enter to send, Shift+Enter for newline)"
+                  placeholder="Message Qexow… (Enter to send, Shift+Enter for newline)"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -694,7 +694,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               <p className="chat-hint">
                 {isTyping
                   ? 'Agent is working…'
-                  : 'Powered by Codex CLI · Type "Approve" to authorize actions'}
+                  : 'Powered by Qexow · Type "Approve" to authorize actions'}
               </p>
             </div>
           </div>

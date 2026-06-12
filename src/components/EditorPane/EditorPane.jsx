@@ -203,7 +203,7 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
           <FileCode size={48} className="editor-empty-icon" />
           <p className="editor-empty-title">No file open</p>
           <p className="editor-empty-hint">
-            Click a file in the sidebar, or files modified by Codex will open automatically.
+            Click a file in the sidebar, or files modified by Qexow will open automatically.
           </p>
         </div>
       )}
