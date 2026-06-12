@@ -443,6 +443,10 @@ app.post('/api/workspace/build', (req, res) => {
     console.log(`Background build exited with code ${code}`);
   });
 
+  buildProc.on('error', (err) => {
+    console.error('[Server] Failed to spawn background build process:', err);
+  });
+
   res.json({ success: true, message: 'Build started in background' });
 });
 
