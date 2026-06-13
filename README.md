@@ -1,2 +1,2 @@
-# qexow-app
-qexow is like codex, but the chats can talk to each other
+# AxiOwl-Desktop
+AxiOwl is like Codex, but the chats can talk to each other.

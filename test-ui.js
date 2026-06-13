@@ -22,20 +22,20 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
   page.on('pageerror', err => console.error('BROWSER ERROR:', err.message));
 
   try {
-    // ── 1. Load app ──────────────────────────────────────────────────────────
+    // â”€â”€ 1. Load app â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     console.log('\n[1] Navigating to http://localhost:3000...');
     await page.goto('http://localhost:3000');
 
     // Wait for the new textarea-based input
     console.log('[1] Waiting for chat textarea...');
     await page.waitForSelector('.chat-textarea', { timeout: 15000 });
-    console.log('[1] ✓ Chat textarea found.');
+    console.log('[1] âœ“ Chat textarea found.');
 
-    // ── 2. Screenshot initial state ──────────────────────────────────────────
+    // â”€â”€ 2. Screenshot initial state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     await page.screenshot({ path: path.join(ARTIFACTS, 'initial_state.png') });
-    console.log('[2] ✓ Initial state screenshot saved.');
+    console.log('[2] âœ“ Initial state screenshot saved.');
 
-    // ── 3. Historical session navigation ─────────────────────────────────────
+    // â”€â”€ 3. Historical session navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     console.log('\n[3] Checking for historical sessions in sidebar...');
     await page.waitForSelector('.section:has-text("Historical Sessions")', { timeout: 10000 });
 
@@ -57,7 +57,7 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
         const h = document.querySelector('.thread-header h2');
         return h && h.innerText.trim() === expected.trim();
       }, firstText, { timeout: 10000 });
-      console.log('[3] ✓ Thread header updated to session title.');
+      console.log('[3] âœ“ Thread header updated to session title.');
 
       await page.screenshot({ path: path.join(ARTIFACTS, 'historical_session_loaded.png') });
 
@@ -67,27 +67,27 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
         const h = document.querySelector('.thread-header h2');
         return h && h.innerText.trim() === 'New Thread';
       }, { timeout: 10000 });
-      console.log('[3] ✓ Back to New Thread.');
+      console.log('[3] âœ“ Back to New Thread.');
     } else {
       console.log('[3] No historical sessions, skipping navigation test.');
     }
 
-    // ── 4. Verify input UI ───────────────────────────────────────────────────
+    // â”€â”€ 4. Verify input UI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     console.log('\n[4] Verifying chat input UI...');
     const textarea = page.locator('.chat-textarea');
     await textarea.waitFor({ timeout: 5000 });
 
     // Verify send button is present
     await page.waitForSelector('.send-btn', { timeout: 5000 });
-    console.log('[4] ✓ Send button found.');
+    console.log('[4] âœ“ Send button found.');
 
-    // ── 5. Model selector ────────────────────────────────────────────────────
+    // â”€â”€ 5. Model selector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     console.log('\n[5] Checking model selector...');
     await page.waitForSelector('.model-selector', { timeout: 5000 });
     await page.locator('.model-selector').selectOption('gpt-5.4-mini');
-    console.log('[5] ✓ Model selector works.');
+    console.log('[5] âœ“ Model selector works.');
 
-    // ── 5.5. Workspace selection and creation ──────────────────────────────────
+    // â”€â”€ 5.5. Workspace selection and creation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     console.log('\n[5.5] Checking workspace selector and creation...');
     await page.waitForSelector('.workspace-select', { timeout: 5000 });
     
@@ -100,7 +100,7 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
     // Click '+' button to open creation form
     await page.click('.workspace-add-btn');
     await page.waitForSelector('.workspace-input', { timeout: 3000 });
-    console.log('[5.5] ✓ Workspace creation form opened.');
+    console.log('[5.5] âœ“ Workspace creation form opened.');
     
     // Fill in new workspace name
     const newWsName = 'test-pw-workspace';
@@ -112,19 +112,19 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
       const select = document.querySelector('.workspace-select');
       return select && select.value === expected;
     }, newWsName, { timeout: 5000 });
-    console.log(`[5.5] ✓ Workspace "${newWsName}" successfully created and selected.`);
+    console.log(`[5.5] âœ“ Workspace "${newWsName}" successfully created and selected.`);
     
-    // Select "qexow-app" back to proceed with the main test in the correct folder
-    if (options.includes('qexow-app')) {
-      await page.locator('.workspace-select').selectOption('qexow-app');
+    // Select "axiowl-desktop" back to proceed with the main test in the correct folder
+    if (options.includes('axiowl-desktop')) {
+      await page.locator('.workspace-select').selectOption('axiowl-desktop');
       await page.waitForFunction(() => {
         const select = document.querySelector('.workspace-select');
-        return select && select.value === 'qexow-app';
+        return select && select.value === 'axiowl-desktop';
       }, { timeout: 5000 });
-      console.log('[5.5] ✓ Switched back to "qexow-app" workspace.');
+      console.log('[5.5] âœ“ Switched back to "axiowl-desktop" workspace.');
     }
 
-    // ── 6. Send a real prompt via the new textarea ───────────────────────────
+    // â”€â”€ 6. Send a real prompt via the new textarea â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const prompt = "create a new markdown file named hello_world.md with contents '# Hello World' inside the workspace";
     console.log(`\n[6] Sending prompt: "${prompt.substring(0, 50)}..."`);
     await textarea.fill(prompt);
@@ -133,16 +133,16 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
     const sendBtn = page.locator('.send-btn');
     const hasSendActive = await sendBtn.evaluate(el => el.classList.contains('active'));
     if (hasSendActive) {
-      console.log('[6] ✓ Send button is active with text entered.');
+      console.log('[6] âœ“ Send button is active with text entered.');
     }
 
     // Send via Enter key (Shift+Enter would insert newline, plain Enter sends)
     await textarea.press('Enter');
 
-    // ── 7. New session optimistic sidebar entry ──────────────────────────────
+    // â”€â”€ 7. New session optimistic sidebar entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // thread.started from Codex can take 10-20s (model loading + API call).
     // We wait up to 20s for the sidebar to show the new session optimistically.
-    console.log('\n[7] Waiting for optimistic sidebar entry (≤20s)...');
+    console.log('\n[7] Waiting for optimistic sidebar entry (â‰¤20s)...');
     await page.waitForFunction(() => {
       const sections = Array.from(document.querySelectorAll('.section'));
       const histSection = sections.find(s => {
@@ -168,10 +168,10 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
         firstText.includes('markdown')
       );
     }, undefined, { timeout: 20000 });
-    console.log('[7] ✓ New session appeared in sidebar!');
+    console.log('[7] âœ“ New session appeared in sidebar!');
 
-    // ── 8. Wait for Codex to complete and diff to appear ────────────────────
-    console.log('\n[8] Waiting for file to open in editor pane (≤90s)...');
+    // â”€â”€ 8. Wait for Codex to complete and diff to appear â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    console.log('\n[8] Waiting for file to open in editor pane (â‰¤90s)...');
     await page.waitForFunction(() => {
       const ep = document.querySelector('.editor-pane');
       if (!ep) return false;
@@ -180,15 +180,15 @@ const ARTIFACTS = 'C:\\Users\\kjhgf\\.gemini\\antigravity\\brain\\084d03f3-8012-
       if (!filepath || !cmContent) return false;
       return filepath.textContent.includes('hello_world.md') && cmContent.textContent.includes('Hello World');
     }, undefined, { timeout: 90000 });
-    console.log('[8] ✓ hello_world.md opened in editor pane!');
+    console.log('[8] âœ“ hello_world.md opened in editor pane!');
 
-    // ── 9. Final screenshot ──────────────────────────────────────────────────
+    // â”€â”€ 9. Final screenshot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     await page.waitForTimeout(2000);
     const finalPath = path.join(ARTIFACTS, 'app_screenshot.png');
     await page.screenshot({ path: finalPath });
-    console.log(`\n[9] ✓ Final screenshot saved: ${finalPath}`);
+    console.log(`\n[9] âœ“ Final screenshot saved: ${finalPath}`);
 
-    console.log('\n=== ALL TESTS PASSED ✓ ===');
+    console.log('\n=== ALL TESTS PASSED âœ“ ===');
 
   } catch (err) {
     console.error('\n=== TEST FAILED ===');

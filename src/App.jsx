@@ -29,7 +29,7 @@ function App() {
     secondaryResetSeconds: null
   });
 
-  // ── Editor state ─────────────────────────────────────────────────────────
+  // Editor state
   // openFiles: Array<{ path: string, name: string, content: string }>
   const [openFiles, setOpenFiles] = useState([]);
   const [activeFilePath, setActiveFilePath] = useState(null);
@@ -45,14 +45,14 @@ function App() {
   // Sync token usage from local storage whenever session changes
   useEffect(() => {
     if (activeSession) {
-      const savedUsage = parseInt(localStorage.getItem(`qexow_usage_${activeSession}`) || '0', 10);
+      const savedUsage = parseInt(localStorage.getItem(`axiowl_usage_${activeSession}`) || '0', 10);
       setActiveSessionUsage(savedUsage);
     } else {
       setActiveSessionUsage(0);
     }
   }, [activeSession]);
 
-  // ── Open a file in the editor ─────────────────────────────────────────────
+  // Open a file in the editor
   const handleFileOpen = useCallback(async (absolutePath) => {
     if (!absolutePath) return;
     // If already open, just switch to it
@@ -79,7 +79,7 @@ function App() {
     }
   }, []);
 
-  // ── Refresh an already-open file (e.g. after Codex modifies it) ──────────
+  // Refresh an already-open file (e.g. after Codex modifies it)
   const handleFileRefresh = useCallback(async (absolutePath) => {
     if (!absolutePath) return;
     try {
@@ -104,7 +104,7 @@ function App() {
     }
   }, [triggerWorkspaceRefresh]);
 
-  // ── Save a file ───────────────────────────────────────────────────────────
+  // Save a file
   const handleFileSave = useCallback(async (absolutePath, content) => {
     const res = await fetch('/api/file', {
       method: 'POST',
@@ -121,7 +121,7 @@ function App() {
     triggerWorkspaceRefresh();
   }, [triggerWorkspaceRefresh]);
 
-  // ── Close a tab ───────────────────────────────────────────────────────────
+  // Close a tab
   const handleTabClose = useCallback((closedPath) => {
     setOpenFiles(prev => {
       const remaining = prev.filter(f => f.path !== closedPath);
@@ -185,7 +185,7 @@ function App() {
           case 'toggle-editor':
             handleToggleReviewPane();
             break;
-          case 'about-qexow':
+          case 'about-axiowl':
             setShowAboutModal(true);
             break;
           default:
@@ -196,7 +196,7 @@ function App() {
     }
   }, [handleNewWorkspace, handleSaveFile, handleToggleSidebar, handleToggleReviewPane]);
 
-  // ── Quota fetching ────────────────────────────────────────────────────────
+  // Quota fetching
   const fetchQuotaStatus = () => {
     fetch('/api/quota')
       .then(res => res.json())
@@ -409,12 +409,12 @@ function App() {
           <div className="about-modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="about-modal-header">
               <Terminal size={32} className="about-logo-icon" />
-              <h3>Qexow Developer Studio</h3>
+              <h3>AxiOwl Developer Studio</h3>
               <span className="about-version">Version 0.1.0 (Beta)</span>
             </div>
             <div className="about-modal-body">
               <p>
-                Qexow is a premium, AI-powered desktop development cockpit designed by the Google DeepMind team. It provides context-aware command line execution, automated file diff editing, and code compilation pipelines.
+                AxiOwl is a premium, AI-powered desktop development cockpit designed by the Google DeepMind team. It provides context-aware command line execution, automated file diff editing, and code compilation pipelines.
               </p>
               <div className="about-details-table">
                 <div className="details-row">

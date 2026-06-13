@@ -44,7 +44,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           <div className="logo-container">
             <Command size={48} className="logo-icon" />
           </div>
-          <h1>Welcome to Qexow</h1>
+          <h1>Welcome to AxiOwl</h1>
           <p>Login with OAuth to start a secure conversation.</p>
         </div>
         
@@ -81,7 +81,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         )}
         
         <div className="login-footer">
-          Powered by Qexow Desktop Engine
+          Powered by AxiOwl Desktop Engine
         </div>
       </div>
     </div>

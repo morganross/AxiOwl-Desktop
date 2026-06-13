@@ -31,7 +31,7 @@ export default function TitleBar({
       <div className="title-bar-left">
         <div className="title-bar-logo">
           <Terminal size={14} className="logo-icon" />
-          <span className="logo-text">Qexow</span>
+          <span className="logo-text">AxiOwl</span>
         </div>
 
         <nav className="menu-bar">
@@ -99,7 +99,7 @@ export default function TitleBar({
                   onClick={() => { onShowAbout(); setActiveMenu(null); }}
                 >
                   <Info size={13} className="menu-icon" />
-                  <span>About Qexow</span>
+                  <span>About AxiOwl</span>
                 </button>
               </div>
             )}

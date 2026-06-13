@@ -262,23 +262,23 @@ app.post('/api/auth/logout', (req, res) => {
 const activeProcesses = new Map();
 
 // Active workspaces directory and active workspace path
-const QEXOW_MAIN_DIR = path.resolve(process.env.QEXOW_MAIN_DIR || path.join(os.homedir(), 'Qexow'));
-const workspacesParentDir = QEXOW_MAIN_DIR;
+const AXIOWL_MAIN_DIR = path.resolve(process.env.AXIOWL_MAIN_DIR || path.join(os.homedir(), 'AxiOwl'));
+const workspacesParentDir = AXIOWL_MAIN_DIR;
 let activeWorkspace = '';
 
 async function initWorkspaces() {
   try {
-    await fs.mkdir(QEXOW_MAIN_DIR, { recursive: true });
-    console.log('[Server] Main workspaces directory:', QEXOW_MAIN_DIR);
+    await fs.mkdir(AXIOWL_MAIN_DIR, { recursive: true });
+    console.log('[Server] Main workspaces directory:', AXIOWL_MAIN_DIR);
 
-    const entries = await fs.readdir(QEXOW_MAIN_DIR, { withFileTypes: true });
+    const entries = await fs.readdir(AXIOWL_MAIN_DIR, { withFileTypes: true });
     let folders = entries
       .filter(entry => entry.isDirectory())
       .map(entry => entry.name)
       .filter(name => !['node_modules', '.git', '__pycache__', 'dist', 'dist_electron', 'output'].includes(name));
 
     if (folders.length === 0) {
-      const defaultWS = path.join(QEXOW_MAIN_DIR, 'default-workspace');
+      const defaultWS = path.join(AXIOWL_MAIN_DIR, 'default-workspace');
       await fs.mkdir(defaultWS, { recursive: true });
       folders = ['default-workspace'];
       console.log('[Server] Created default workspace at:', defaultWS);
@@ -286,19 +286,19 @@ async function initWorkspaces() {
 
     if (process.env.INITIAL_WORKSPACE) {
       const resolvedInit = path.resolve(process.env.INITIAL_WORKSPACE);
-      if (resolvedInit.startsWith(QEXOW_MAIN_DIR)) {
+      if (resolvedInit.startsWith(AXIOWL_MAIN_DIR)) {
         activeWorkspace = resolvedInit;
       }
     }
 
     if (!activeWorkspace) {
-      activeWorkspace = path.join(QEXOW_MAIN_DIR, folders[0]);
+      activeWorkspace = path.join(AXIOWL_MAIN_DIR, folders[0]);
     }
 
     console.log('[Server] Active workspace set to:', activeWorkspace);
   } catch (err) {
     console.error('[Server] Failed to initialize workspaces:', err);
-    activeWorkspace = path.join(QEXOW_MAIN_DIR, 'default-workspace');
+    activeWorkspace = path.join(AXIOWL_MAIN_DIR, 'default-workspace');
   }
 }
 
@@ -847,7 +847,7 @@ app.get('/api/exec', (req, res) => {
         res.write(`data: ${JSON.stringify(termEvent)}\n\n`);
       }
     } catch (e) {
-      // Not JSON — send as raw message
+      // Not JSON - send as raw message
       res.write(`data: ${JSON.stringify({ type: 'message', content: line + '\n' })}\n\n`);
     }
   });
@@ -920,7 +920,7 @@ export async function startServer(port) {
   const listenPort = port || PORT;
   return new Promise((resolve) => {
     app.listen(listenPort, () => {
-      console.log(`Qexow App Server running on http://localhost:${listenPort}`);
+      console.log(`AxiOwl App Server running on http://localhost:${listenPort}`);
       resolve(listenPort);
     });
   });

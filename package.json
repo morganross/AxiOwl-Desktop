@@ -1,5 +1,5 @@
 {
-  "name": "qexow-app",
+  "name": "axiowl-desktop",
   "private": true,
   "version": "0.1.9",
   "type": "module",
@@ -39,8 +39,8 @@
     "vite": "^5.3.1"
   },
   "build": {
-    "appId": "com.qexow.app",
-    "productName": "Qexow",
+    "appId": "com.axiowl.desktop",
+    "productName": "AxiOwl",
     "directories": {
       "output": "dist_electron"
     },
@@ -61,7 +61,7 @@
       {
         "provider": "github",
         "owner": "morganross",
-        "repo": "qexow-app"
+        "repo": "AxiOwl-Desktop"
       }
     ],
     "files": [

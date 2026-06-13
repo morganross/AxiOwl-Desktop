@@ -43,7 +43,7 @@ function setupAutoUpdater() {
     dialog.showMessageBox({
       type: 'info',
       title: 'Update Ready',
-      message: `A new version of Qexow (${info.version}) has been downloaded and is ready to install.`,
+      message: `A new version of AxiOwl (${info.version}) has been downloaded and is ready to install.`,
       detail: 'The application will restart to apply the update.',
       buttons: ['Restart Now', 'Later']
     }).then((result) => {
@@ -60,7 +60,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
-// serverProcess is no longer needed — server runs in-process via startServer()
+// serverProcess is no longer needed - server runs in-process via startServer()
 
 // Disable hardware acceleration to resolve potential rendering glitches in VM environments
 app.disableHardwareAcceleration();
@@ -87,7 +87,7 @@ function getFreePort(startPort) {
 
 function getPathFromArgs(argv) {
   for (const arg of argv) {
-    if (arg.endsWith('electron.exe') || arg.endsWith('electron') || arg.endsWith('Qexow.exe') || arg === '.') {
+    if (arg.endsWith('electron.exe') || arg.endsWith('electron') || arg.endsWith('AxiOwl.exe') || arg === '.') {
       continue;
     }
     if (arg.startsWith('--')) {
@@ -108,19 +108,19 @@ async function registerContextMenu() {
   }
   try {
     // 1. File Context Menu
-    await execAsync(`reg add "HKCU\\Software\\Classes\\*\\shell\\Open in Qexow" /ve /t REG_SZ /d "Open in Qexow" /f`);
-    await execAsync(`reg add "HKCU\\Software\\Classes\\*\\shell\\Open in Qexow\\command" /ve /t REG_SZ /d "\\"${execPath}\\" \\"%1\\"" /f`);
-    await execAsync(`reg add "HKCU\\Software\\Classes\\*\\shell\\Open in Qexow" /v "Icon" /t REG_SZ /d "\\"${execPath}\\",0" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\*\\shell\\Open in AxiOwl" /ve /t REG_SZ /d "Open in AxiOwl" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\*\\shell\\Open in AxiOwl\\command" /ve /t REG_SZ /d "\\"${execPath}\\" \\"%1\\"" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\*\\shell\\Open in AxiOwl" /v "Icon" /t REG_SZ /d "\\"${execPath}\\",0" /f`);
     
     // 2. Folder Context Menu
-    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\shell\\Open in Qexow" /ve /t REG_SZ /d "Open in Qexow" /f`);
-    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\shell\\Open in Qexow\\command" /ve /t REG_SZ /d "\\"${execPath}\\" \\"%1\\"" /f`);
-    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\shell\\Open in Qexow" /v "Icon" /t REG_SZ /d "\\"${execPath}\\",0" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\shell\\Open in AxiOwl" /ve /t REG_SZ /d "Open in AxiOwl" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\shell\\Open in AxiOwl\\command" /ve /t REG_SZ /d "\\"${execPath}\\" \\"%1\\"" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\shell\\Open in AxiOwl" /v "Icon" /t REG_SZ /d "\\"${execPath}\\",0" /f`);
     
     // 3. Folder Background Context Menu
-    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Open in Qexow" /ve /t REG_SZ /d "Open in Qexow" /f`);
-    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Open in Qexow\\command" /ve /t REG_SZ /d "\\"${execPath}\\" \\"%V\\"" /f`);
-    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Open in Qexow" /v "Icon" /t REG_SZ /d "\\"${execPath}\\",0" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Open in AxiOwl" /ve /t REG_SZ /d "Open in AxiOwl" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Open in AxiOwl\\command" /ve /t REG_SZ /d "\\"${execPath}\\" \\"%V\\"" /f`);
+    await execAsync(`reg add "HKCU\\Software\\Classes\\Directory\\Background\\shell\\Open in AxiOwl" /v "Icon" /t REG_SZ /d "\\"${execPath}\\",0" /f`);
     
     console.log('[Electron Main] Context menu successfully registered in Windows registry.');
   } catch (err) {
@@ -185,9 +185,9 @@ function setupApplicationMenu() {
       label: 'About',
       submenu: [
         {
-          label: 'About Qexow',
+          label: 'About AxiOwl',
           click: () => {
-            if (mainWindow) mainWindow.webContents.send('menu-action', 'about-qexow');
+            if (mainWindow) mainWindow.webContents.send('menu-action', 'about-axiowl');
           }
         }
       ]
@@ -281,7 +281,7 @@ async function createTray() {
     { type: 'separator' },
     { label: 'Quit', click: () => { app.isQuitting = true; app.quit(); } }
   ]);
-  tray.setToolTip('Qexow');
+  tray.setToolTip('AxiOwl');
   tray.setContextMenu(contextMenu);
   tray.on('click', () => {
     if (mainWindow.isVisible()) {
@@ -364,7 +364,7 @@ if (!gotTheLock) {
     if (initialFile) process.env.INITIAL_FILE = initialFile;
     process.env.PORT = String(port);
 
-    // Start Express server in-process (works in packaged EXE — no external node needed)
+    // Start Express server in-process (works in packaged EXE - no external node needed)
     await startServer(port);
     console.log(`[Electron Main] In-process Express server started on port ${port}`);
 

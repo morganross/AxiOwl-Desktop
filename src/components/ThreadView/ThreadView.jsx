@@ -157,7 +157,7 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
           <Terminal size={32} className="welcome-logo-icon" />
         </div>
         <h1 className="welcome-title">How can I help you today?</h1>
-        <p className="welcome-subtitle">Ask Qexow to write code, modify files, or execute CLI tasks.</p>
+        <p className="welcome-subtitle">Ask AxiOwl to write code, modify files, or execute CLI tasks.</p>
       </div>
       <div className="suggestions-grid animate-fade-in-delayed">
         {suggestions.map((s, idx) => (
@@ -251,17 +251,17 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
   ]);
 
   const [selectedModel, setSelectedModel] = useState(() => {
-    const saved = localStorage.getItem(`qexow_model_${activeSession || 'new'}`);
+    const saved = localStorage.getItem(`axiowl_model_${activeSession || 'new'}`);
     return saved || 'gpt-5.4-mini';
   });
 
   const [selectedReasoning, setSelectedReasoning] = useState(() => {
-    const saved = localStorage.getItem(`qexow_reasoning_${activeSession || 'new'}`);
+    const saved = localStorage.getItem(`axiowl_reasoning_${activeSession || 'new'}`);
     return saved || 'default';
   });
 
   const [selectedSpeed, setSelectedSpeed] = useState(() => {
-    const saved = localStorage.getItem(`qexow_speed_${activeSession || 'new'}`);
+    const saved = localStorage.getItem(`axiowl_speed_${activeSession || 'new'}`);
     return saved || 'default';
   });
 
@@ -278,13 +278,13 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem(`qexow_model_${activeSession || 'new'}`);
+    const saved = localStorage.getItem(`axiowl_model_${activeSession || 'new'}`);
     setSelectedModel(saved || 'gpt-5.4-mini');
 
-    const savedReasoning = localStorage.getItem(`qexow_reasoning_${activeSession || 'new'}`);
+    const savedReasoning = localStorage.getItem(`axiowl_reasoning_${activeSession || 'new'}`);
     setSelectedReasoning(savedReasoning || 'default');
 
-    const savedSpeed = localStorage.getItem(`qexow_speed_${activeSession || 'new'}`);
+    const savedSpeed = localStorage.getItem(`axiowl_speed_${activeSession || 'new'}`);
     setSelectedSpeed(savedSpeed || 'default');
   }, [activeSession]);
 
@@ -303,7 +303,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
       const prompt = lastMessage.content[0]?.text || '';
       pendingNewSessionPromptRef.current = prompt;
 
-      // ── Context injection: prepend active file + last terminal output ────
+      // Context injection: prepend active file + last terminal output
       let contextPrefix = '';
       if (activeFilePath && activeFileContent) {
         const maxLines = 500;
@@ -322,11 +322,11 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
 
       const currentUuid = activeSessionRef.current || streamedSessionUuidRef.current || 'new';
       const currentModel =
-        localStorage.getItem(`qexow_model_${currentUuid}`) || 'gpt-5.4-mini';
+        localStorage.getItem(`axiowl_model_${currentUuid}`) || 'gpt-5.4-mini';
       const currentReasoning =
-        localStorage.getItem(`qexow_reasoning_${currentUuid}`) || 'default';
+        localStorage.getItem(`axiowl_reasoning_${currentUuid}`) || 'default';
       const currentSpeed =
-        localStorage.getItem(`qexow_speed_${currentUuid}`) || 'default';
+        localStorage.getItem(`axiowl_speed_${currentUuid}`) || 'default';
 
       const queue = new AsyncQueue();
       console.log('[ThreadView] Connecting EventSource with uuid:', currentUuid, 'model:', currentModel, 'reasoning:', currentReasoning, 'speed:', currentSpeed);
@@ -351,14 +351,14 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
             const newUuid = event.thread_id;
             streamedSessionUuidRef.current = newUuid;
 
-            const modelToSave = localStorage.getItem('qexow_model_new') || 'gpt-5.4-mini';
-            localStorage.setItem(`qexow_model_${newUuid}`, modelToSave);
+            const modelToSave = localStorage.getItem('axiowl_model_new') || 'gpt-5.4-mini';
+            localStorage.setItem(`axiowl_model_${newUuid}`, modelToSave);
 
-            const reasoningToSave = localStorage.getItem('qexow_reasoning_new') || 'default';
-            localStorage.setItem(`qexow_reasoning_${newUuid}`, reasoningToSave);
+            const reasoningToSave = localStorage.getItem('axiowl_reasoning_new') || 'default';
+            localStorage.setItem(`axiowl_reasoning_${newUuid}`, reasoningToSave);
 
-            const speedToSave = localStorage.getItem('qexow_speed_new') || 'default';
-            localStorage.setItem(`qexow_speed_${newUuid}`, speedToSave);
+            const speedToSave = localStorage.getItem('axiowl_speed_new') || 'default';
+            localStorage.setItem(`axiowl_speed_${newUuid}`, speedToSave);
 
             if (!activeSessionRef.current && onSessionCreatedRef.current) {
               console.log('[ThreadView] Calling onSessionCreated for:', newUuid);
@@ -380,7 +380,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               yield { content: [{ type: 'text', text: fullResponse }] };
             }
           } else if (event.type === 'approval_request') {
-            fullResponse += `\n\n> **⚠️ Action Required**: Codex wants to run \`${event.command}\`.\n\nType **Approve** to authorize this action.\n`;
+            fullResponse += `\n\n> **Action Required**: Codex wants to run \`${event.command}\`.\n\nType **Approve** to authorize this action.\n`;
             yield { content: [{ type: 'text', text: fullResponse }] };
           } else if (event.type === 'diff') {
             if (onDiffReceivedRef.current) onDiffReceivedRef.current(event);
@@ -388,7 +388,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
             if (event.absolutePath && onFileOpenRef.current) {
               onFileOpenRef.current(event.absolutePath);
             }
-            fullResponse += `\n\n> **📝 File Changed**: \`${event.file}\` — opened in editor.\n`;
+            fullResponse += `\n\n> **File Changed**: \`${event.file}\` - opened in editor.\n`;
           } else if (event.type === 'terminal_output') {
             const cmd = event.command ? `$ ${event.command}` : '';
             const out = event.output || '';
@@ -398,13 +398,13 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
             if (lastTerminalOutputRef) lastTerminalOutputRef.current = termText;
             // Show inline as a collapsible terminal block
             if (cmd || out) {
-              fullResponse += `\n\n<details><summary>🖥️ Terminal: <code>${event.command || 'shell'}</code></summary>\n\n\`\`\`\n${out}\n\`\`\`\n</details>\n`;
+              fullResponse += `\n\n<details><summary>Terminal: <code>${event.command || 'shell'}</code></summary>\n\n\`\`\`\n${out}\n\`\`\`\n</details>\n`;
               yield { content: [{ type: 'text', text: fullResponse }] };
             }
           } else if (event.type === 'turn.completed' && event.usage) {
             const usage = event.usage;
             const totalUsed = (usage.input_tokens || 0) + (usage.output_tokens || 0);
-            localStorage.setItem(`qexow_usage_${currentUuid}`, totalUsed);
+            localStorage.setItem(`axiowl_usage_${currentUuid}`, totalUsed);
             if (onTokenUsageUpdatedRef.current) {
               onTokenUsageUpdatedRef.current(totalUsed);
             }
@@ -429,7 +429,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
     }
   });
 
-  // ── Sync activeSession prop → load history ────────────────────────────────
+  // Sync activeSession prop -> load history
   useEffect(() => {
     console.log('[ThreadView] activeSession changed:', { 
       activeSession, 
@@ -484,7 +484,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
     }
   }, [activeSession, runtime]);
 
-  // ── Poll history if the active session is running in the background ───────
+  // Poll history if the active session is running in the background
   useEffect(() => {
     if (!activeSession) return;
     const isRunning = sessions?.find(s => s.uuid === activeSession)?.isRunning || false;
@@ -533,7 +533,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
     return () => clearInterval(interval);
   }, [activeSession, sessions, runtime]);
 
-  // ── Auto-resize textarea ──────────────────────────────────────────────────
+  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -617,7 +617,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               const model = e.target.value;
               setSelectedModel(model);
               const currentUuid = activeSession || streamedSessionUuidRef.current || 'new';
-              localStorage.setItem(`qexow_model_${currentUuid}`, model);
+              localStorage.setItem(`axiowl_model_${currentUuid}`, model);
             }}
           >
             {models.map(m => (
@@ -634,7 +634,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               const reasoning = e.target.value;
               setSelectedReasoning(reasoning);
               const currentUuid = activeSession || streamedSessionUuidRef.current || 'new';
-              localStorage.setItem(`qexow_reasoning_${currentUuid}`, reasoning);
+              localStorage.setItem(`axiowl_reasoning_${currentUuid}`, reasoning);
             }}
           >
             <option value="default">Default Reasoning</option>
@@ -651,7 +651,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               const speed = e.target.value;
               setSelectedSpeed(speed);
               const currentUuid = activeSession || streamedSessionUuidRef.current || 'new';
-              localStorage.setItem(`qexow_speed_${currentUuid}`, speed);
+              localStorage.setItem(`axiowl_speed_${currentUuid}`, speed);
             }}
           >
             <option value="default">Default Speed</option>
@@ -664,14 +664,14 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
         <ThreadPrimitive.Root className="assistant-ui-wrapper">
           <ThreadContent onSelectPrompt={handleSelectPrompt} />
 
-          {/* ── Chat input dock — fixed bottom, full-width centered bar ── */}
+          {/* Chat input dock */}
           <div className="chat-input-dock">
             <div className="chat-input-inner">
               <div className="chat-input-box">
                 <textarea
                   ref={textareaRef}
                   className="chat-textarea"
-                  placeholder="Message Qexow… (Enter to send, Shift+Enter for newline)"
+                  placeholder="Message AxiOwl... (Enter to send, Shift+Enter for newline)"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -693,14 +693,14 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               </div>
               <p className="chat-hint">
                 {isTyping
-                  ? 'Agent is working…'
-                  : 'Powered by Qexow · Type "Approve" to authorize actions'}
+                  ? 'Agent is working...'
+                  : 'Powered by AxiOwl - Type "Approve" to authorize actions'}
               </p>
               <div className="chat-input-usage">
                 <span className="chat-usage-model">{activeModel || 'gpt-5.4-mini'}</span>
-                <span className="chat-usage-divider">·</span>
+                <span className="chat-usage-divider">-</span>
                 <span className="chat-usage-tokens">{(activeSessionUsage || 0).toLocaleString()} / {(activeContextWindow || 272000).toLocaleString()} tokens</span>
-                <span className="chat-usage-divider">·</span>
+                <span className="chat-usage-divider">-</span>
                 <span className="chat-usage-remaining">{Math.max(0, (activeContextWindow || 272000) - (activeSessionUsage || 0)).toLocaleString()} remaining</span>
               </div>
             </div>

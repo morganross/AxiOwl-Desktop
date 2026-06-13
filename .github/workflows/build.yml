@@ -39,15 +39,15 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.pkg.outputs.version }}
-          name: Qexow v${{ steps.pkg.outputs.version }}
+          name: AxiOwl v${{ steps.pkg.outputs.version }}
           body: |
-            ## Qexow v${{ steps.pkg.outputs.version }}
+            ## AxiOwl v${{ steps.pkg.outputs.version }}
 
             ### Download
-            Download the Windows Setup installer below to install Qexow natively with clean uninstallation support.
+            Download the Windows Setup installer below to install AxiOwl natively with clean uninstallation support.
 
             ### What's New
-            - High robustness (9/10): switched to a native NSIS installer that cleanly removes all Qexow Windows Explorer registry keys on uninstall
+            - High robustness (9/10): switched to a native NSIS installer that cleanly removes all AxiOwl Windows Explorer registry keys on uninstall
             - Automatic update verification and notification on app startup
             - Parallel session background execution: switching chats no longer stops a running Codex agent
             - Real-time sync and status loader in sidebar

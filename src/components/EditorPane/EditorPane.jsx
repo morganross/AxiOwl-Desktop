@@ -99,9 +99,9 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
       .catch(() => {});
   }, [refreshTrigger]);
 
-  // Local edit state per tab: path → content string
+  // Local edit state per tab: path -> content string
   const [editContents, setEditContents] = useState({});
-  const [saveState, setSaveState] = useState({}); // path → 'saved' | 'error' | null
+  const [saveState, setSaveState] = useState({}); // path -> 'saved' | 'error' | null
 
   const lastContentsRef = useRef({});
 
@@ -283,7 +283,7 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
             <FileCode size={48} className="editor-empty-icon" />
             <p className="editor-empty-title">No file open</p>
             <p className="editor-empty-hint">
-              Click a file in the workspace explorer below, or files modified by Qexow will open automatically.
+              Click a file in the workspace explorer below, or files modified by AxiOwl will open automatically.
             </p>
           </div>
         )}
