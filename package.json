@@ -1,0 +1,81 @@
+{
+  "name": "axiowl-desktop",
+  "private": true,
+  "version": "0.1.9",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "electron-start": "electron .",
+    "package:win": "npm run build && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "@assistant-ui/react": "^0.14.16",
+    "@assistant-ui/react-markdown": "^0.14.2",
+    "@codemirror/lang-css": "^6.3.1",
+    "@codemirror/lang-html": "^6.4.11",
+    "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/lang-python": "^6.2.1",
+    "@uiw/react-codemirror": "^4.25.10",
+    "cors": "^2.8.6",
+    "electron-updater": "^6.8.9",
+    "express": "^5.2.1",
+    "lucide-react": "^0.394.0",
+    "playwright": "^1.60.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remark-gfm": "^4.0.1",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.0.1",
+    "electron-builder": "^26.15.2",
+    "vite": "^5.3.1"
+  },
+  "build": {
+    "appId": "com.axiowl.desktop",
+    "productName": "AxiOwl",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "signtoolOptions": {
+        "sign": "./nosign.cjs"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "installer.nsh"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "morganross",
+        "repo": "AxiOwl-Desktop"
+      }
+    ],
+    "files": [
+      "dist/**/*",
+      "main.js",
+      "preload.js",
+      "server.js",
+      "loading.html",
+      "get_quota.py",
+      "models.json",
+      "models_utf8.json",
+      "package.json",
+      "node_modules/**/*"
+    ],
+    "asar": false
+  }
+}

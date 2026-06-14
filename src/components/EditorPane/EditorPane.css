@@ -1,0 +1,385 @@
+/* ── Editor Pane ── */
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d10;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* ── Tab Bar ── */
+.editor-tab-bar {
+  display: flex;
+  align-items: stretch;
+  background: #111115;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  overflow-x: auto;
+  min-height: 38px;
+  flex-shrink: 0;
+  scrollbar-width: none;
+  -webkit-app-region: drag;
+}
+.editor-tab-bar::-webkit-scrollbar { display: none; }
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 12px 0 10px;
+  min-width: 100px;
+  max-width: 180px;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #8b8fa8);
+  cursor: pointer;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  user-select: none;
+  -webkit-app-region: no-drag;
+}
+.editor-tab:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary, #e4e6f0);
+}
+.editor-tab.active {
+  background: #0d0d10;
+  color: var(--text-primary, #e4e6f0);
+  border-bottom-color: #3b82f6;
+}
+.editor-tab.dirty .tab-name::after {
+  content: '';
+}
+
+.tab-file-icon {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.76rem;
+}
+.dirty-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex-shrink: 0;
+}
+.tab-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  opacity: 0;
+  color: var(--text-muted, #5a5d75);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.editor-tab:hover .tab-close-btn,
+.editor-tab.active .tab-close-btn {
+  opacity: 1;
+}
+.tab-close-btn:hover {
+  background: rgba(239,68,68,0.2);
+  color: #f87171;
+}
+.editor-tab-empty-hint {
+  padding: 0 16px;
+  font-size: 0.74rem;
+  color: var(--text-muted, #5a5d75);
+  display: flex;
+  align-items: center;
+  font-style: italic;
+}
+
+/* ── Editor Toolbar ── */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: #111115;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  flex-shrink: 0;
+  gap: 8px;
+}
+.editor-filepath {
+  font-size: 0.7rem;
+  color: var(--text-muted, #5a5d75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  font-family: inherit;
+}
+.editor-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.editor-lang-badge {
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: rgba(99,102,241,0.15);
+  color: #818cf8;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+.editor-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  font-weight: 600;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.editor-save-btn:hover {
+  background: rgba(59,130,246,0.25);
+  color: #93c5fd;
+}
+.editor-save-btn.dirty {
+  background: rgba(245,158,11,0.15);
+  color: #fbbf24;
+}
+.editor-save-btn.dirty:hover {
+  background: rgba(245,158,11,0.3);
+}
+.save-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  animation: fadeInOut 0.3s ease;
+}
+.save-status.saved { color: #34d399; }
+.save-status.error { color: #f87171; }
+@keyframes fadeInOut { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Editor Body ── */
+.editor-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-content-area {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── CodeMirror 6 Custom Styling ── */
+.rich-editor {
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.rich-editor .cm-theme {
+  height: 100%;
+}
+.rich-editor .cm-editor {
+  height: 100%;
+  font-family: inherit;
+  font-size: 0.82rem;
+  background-color: #0d0d10 !important;
+}
+.rich-editor .cm-scroller {
+  font-family: inherit;
+  line-height: 1.6;
+}
+.rich-editor .cm-gutters {
+  background-color: #111115 !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: rgba(255, 255, 255, 0.2) !important;
+  padding: 12px 0 !important;
+}
+.rich-editor .cm-activeLineGutter {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+.rich-editor .cm-activeLine {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+.rich-editor .cm-content {
+  caret-color: #3b82f6 !important;
+  padding: 12px 0 !important;
+}
+.rich-editor .cm-cursor {
+  border-left-color: #3b82f6 !important;
+}
+.rich-editor .cm-selectionBackground {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+}
+
+/* ── Empty State ── */
+.editor-empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  opacity: 0.4;
+  padding: 32px;
+  text-align: center;
+}
+.editor-empty-icon { color: #6366f1; }
+.editor-empty-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #e4e6f0);
+  font-family: var(--font-sans, inherit);
+}
+.editor-empty-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted, #5a5d75);
+  max-width: 260px;
+  line-height: 1.5;
+  font-family: var(--font-sans, inherit);
+}
+
+/* ── Split Editor Layout (Editor + Files Bottom Pane) ── */
+.editor-pane-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0d0d10;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+.editor-view-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-files-section {
+  height: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #0b0b0e;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 0;
+}
+.editor-files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #0f0f13;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.editor-files-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.editor-files-header .current-path {
+  color: #cbd5e1;
+  text-transform: none;
+  font-family: inherit;
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-files-header .header-right-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.folder-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.68rem;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.folder-nav-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+.folder-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.editor-files-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px;
+}
+.editor-file-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  color: #8b8fa8;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  user-select: none;
+}
+.editor-file-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e6f0;
+}
+.editor-file-item.folder .folder-icon {
+  flex-shrink: 0;
+  color: #fbbf24;
+  opacity: 0.9;
+}
+.editor-file-item.file .file-icon {
+  flex-shrink: 0;
+  color: #3b82f6;
+  opacity: 0.8;
+}
+.editor-file-item .file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.no-files-hint {
+  padding: 12px 6px;
+  font-size: 0.74rem;
+  color: #5a5d75;
+  font-style: italic;
+}

@@ -1,0 +1,59 @@
+name: Build Desktop Executable
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package Windows EXE
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build and Package
+        run: npm run package:win
+
+      - name: Get Version
+        id: pkg
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: AxiOwl v${{ steps.pkg.outputs.version }}
+          body: |
+            ## AxiOwl v${{ steps.pkg.outputs.version }}
+
+            ### Download
+            Download the Windows Setup installer below to install AxiOwl natively with clean uninstallation support.
+
+            ### What's New
+            - High robustness (9/10): switched to a native NSIS installer that cleanly removes all AxiOwl Windows Explorer registry keys on uninstall
+            - Automatic update verification and notification on app startup
+            - Parallel session background execution: switching chats no longer stops a running Codex agent
+            - Real-time sync and status loader in sidebar
+          draft: false
+          prerelease: false
+          files: |
+            dist_electron/*.exe
+            dist_electron/latest.yml
+          make_latest: true
