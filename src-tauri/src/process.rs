@@ -164,7 +164,7 @@ pub async fn execute_prompt(
             "params": {
                 "clientInfo": {
                     "name": "axiowl-desktop",
-                    "version": "0.1.10"
+                    "version": "0.1.11"
                 },
                 "capabilities": {
                     "experimentalApi": true,
