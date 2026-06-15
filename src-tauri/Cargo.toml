@@ -1,6 +1,6 @@
 [package]
 name = "axiowl-desktop"
-version = "0.1.12"
+version = "0.1.13"
 description = "AxiOwl desktop app"
 authors = ["AxiOwl"]
 edition = "2021"
