@@ -90,7 +90,7 @@ pub async fn get_quota(state: &AppState) -> Result<QuotaStatus, String> {
             "params": {
                 "clientInfo": {
                     "name": "axiowl-desktop",
-                    "version": "0.1.11"
+                    "version": "0.1.12"
                 },
                 "capabilities": {
                     "experimentalApi": true,
