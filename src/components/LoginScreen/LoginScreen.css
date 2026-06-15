@@ -72,6 +72,102 @@
   width: 100%;
 }
 
+.runtime-status-card {
+  width: 100%;
+  text-align: left;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.runtime-status-ok {
+  background: rgba(34, 197, 94, 0.06);
+  border-color: rgba(34, 197, 94, 0.22);
+}
+
+.runtime-status-error {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.runtime-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.runtime-status-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f4f4f5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.runtime-status-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.runtime-status-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runtime-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runtime-status-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.runtime-status-value {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #f4f4f5;
+  word-break: break-word;
+}
+
+.runtime-status-detail {
+  margin-top: 2px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.runtime-status-link {
+  margin-top: 4px;
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #93c5fd;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.runtime-status-link:hover {
+  color: #bfdbfe;
+}
+
 .login-actions {
   width: 100%;
   margin-bottom: 24px;

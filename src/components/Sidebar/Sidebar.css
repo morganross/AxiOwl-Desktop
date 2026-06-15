@@ -128,25 +128,6 @@
   border-left: none; /* modern look without sidebar side-bars */
 }
 
-.sidebar-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--spacing-md);
-  border-top: 1px solid var(--border-subtle);
-}
-
-.icon-btn {
-  padding: var(--spacing-sm);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  transition: all 0.2s ease;
-}
-
-.icon-btn:hover {
-  background: var(--bg-surface);
-  color: var(--text-primary);
-}
-
 .sidebar-user-profile {
   display: flex;
   align-items: center;
@@ -256,6 +237,11 @@
   opacity: 0.7;
 }
 
+.quota-unavailable {
+  display: block;
+  line-height: 1.45;
+}
+
 /* ── Quota Meters ── */
 .quota-meter-label-row {
   display: flex;
@@ -294,6 +280,13 @@
   flex-direction: column;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs);
+}
+
+.workspace-input-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .workspace-input {
@@ -346,4 +339,83 @@
 .workspace-cancel-btn:hover {
   background: var(--bg-surface);
   color: var(--text-primary);
+}
+
+.sidebar-status-message {
+  margin-top: var(--spacing-xs);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  -webkit-app-region: no-drag;
+}
+
+.sidebar-status-message.error-text {
+  color: #fca5a5;
+}
+
+.sidebar-status-message.success-text {
+  color: #86efac;
+}
+
+.runtime-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.runtime-summary-ok {
+  color: var(--text-primary);
+}
+
+.runtime-summary-error {
+  color: var(--text-primary);
+}
+
+.runtime-summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.runtime-summary-pill {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.42rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.runtime-summary-ok .runtime-summary-pill {
+  background: rgba(34, 197, 94, 0.18);
+  color: #86efac;
+}
+
+.runtime-summary-error .runtime-summary-pill {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+}
+
+.runtime-summary-line {
+  display: block;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.runtime-summary-link {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.runtime-summary-link:hover {
+  color: #bfdbfe;
 }

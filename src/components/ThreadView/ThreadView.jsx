@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, Terminal, Copy, Check, FileCode, GitBranch, FolderOpen, ArrowDown } from 'lucide-react';
-import { AssistantRuntimeProvider, useLocalRuntime, ThreadPrimitive, useMessage, MessagePrimitive, useAuiState } from '@assistant-ui/react';
+import { Send, Loader2, Terminal, Copy, Check, ArrowDown, Square } from 'lucide-react';
+import { AssistantRuntimeProvider, useLocalRuntime, ThreadPrimitive, MessagePrimitive, useAuiState } from '@assistant-ui/react';
 import { MarkdownTextPrimitive, useIsMarkdownCodeBlock } from '@assistant-ui/react-markdown';
 import remarkGfm from 'remark-gfm';
+import { desktopApi } from '../../lib/desktopApi';
+import { appendRuntimeDiagnosticsHint } from '../../lib/runtimeMessaging';
 import './ThreadView.css';
 
-// AsyncQueue to bridge EventSource callback streams to async generators (async function* run)
+// AsyncQueue bridges Tauri process events to assistant-ui async generators.
 class AsyncQueue {
   constructor() {
     this.queue = [];
@@ -121,35 +123,7 @@ const AssistantMessage = () => {
   );
 };
 
-// Interactive suggestions screen for the empty chat state
-const WelcomeScreen = ({ onSelectPrompt }) => {
-  const suggestions = [
-    {
-      title: "Create hello_world.md",
-      desc: "Generates a basic hello world markdown file in the workspace",
-      prompt: "create a new markdown file named hello_world.md with contents '# Hello World' inside the workspace",
-      icon: <FileCode size={20} className="suggestion-icon code" />
-    },
-    {
-      title: "Verify system status",
-      desc: "Runs a diagnostic test of the local backend process",
-      prompt: "run a diagnostic status check",
-      icon: <Terminal size={20} className="suggestion-icon status" />
-    },
-    {
-      title: "Show workspace files",
-      desc: "Lists and summarizes all active files in the workspace",
-      prompt: "list the files currently in the workspace",
-      icon: <FolderOpen size={20} className="suggestion-icon files" />
-    },
-    {
-      title: "Check Git status",
-      desc: "Checks for modified, unstaged, or untracked changes",
-      prompt: "check git status for the repository",
-      icon: <GitBranch size={20} className="suggestion-icon git" />
-    }
-  ];
-
+const WelcomeScreen = () => {
   return (
     <div className="welcome-container">
       <div className="welcome-header animate-fade-in">
@@ -157,22 +131,7 @@ const WelcomeScreen = ({ onSelectPrompt }) => {
           <Terminal size={32} className="welcome-logo-icon" />
         </div>
         <h1 className="welcome-title">How can I help you today?</h1>
-        <p className="welcome-subtitle">Ask AxiOwl to write code, modify files, or execute CLI tasks.</p>
-      </div>
-      <div className="suggestions-grid animate-fade-in-delayed">
-        {suggestions.map((s, idx) => (
-          <button 
-            key={idx} 
-            className="suggestion-card" 
-            onClick={() => onSelectPrompt(s.prompt)}
-          >
-            <div className="suggestion-card-header">
-              {s.icon}
-              <span className="suggestion-card-title">{s.title}</span>
-            </div>
-            <p className="suggestion-card-desc">{s.desc}</p>
-          </button>
-        ))}
+        <p className="welcome-subtitle">Ask AxiOwl to inspect the workspace, edit files, or run Codex tasks against the active project.</p>
       </div>
     </div>
   );
@@ -190,12 +149,12 @@ const ThreadScrollToBottom = () => {
 };
 
 // Content wrapper to switch between Empty state and messages list
-const ThreadContent = ({ onSelectPrompt }) => {
+const ThreadContent = () => {
   const messages = useAuiState(s => s.thread.messages);
   const isEmpty = messages.length === 0;
 
   if (isEmpty) {
-    return <WelcomeScreen onSelectPrompt={onSelectPrompt} />;
+    return <WelcomeScreen />;
   }
 
   return (
@@ -213,15 +172,49 @@ const ThreadContent = ({ onSelectPrompt }) => {
   );
 };
 
-export default function ThreadView({ activeSession, sessions, onFileOpen, onTerminalOutput, activeFileContent, activeFilePath, lastTerminalOutputRef, onDiffReceived, onSessionCreated, onSessionFinished, onModelInfoChanged, onTokenUsageUpdated, activeModel, activeContextWindow, activeSessionUsage }) {
+function mapHistoryMessages(messages, sessionId) {
+  let lastId = null;
+  return messages.map((message, index) => {
+    const currentId = `msg-${index}-${sessionId}`;
+    const mapped = {
+      id: currentId,
+      parentId: lastId,
+      role: message.role,
+      content: (message.content && Array.isArray(message.content) && message.content[0])
+        ? message.content
+        : [{ type: 'text', text: typeof message.content === 'string' ? message.content : '' }]
+    };
+    lastId = currentId;
+    return mapped;
+  });
+}
+
+function isAuthExpiredError(errorText) {
+  const normalized = String(errorText || '').toLowerCase();
+  return normalized.includes('authentication expired')
+    || normalized.includes('token_invalidated')
+    || normalized.includes('token_revoked')
+    || normalized.includes('refresh_token_invalidated')
+    || normalized.includes('invalidated oauth token')
+    || normalized.includes('oauth token for user')
+    || normalized.includes('please sign in again')
+    || normalized.includes('please log in again')
+    || normalized.includes('session has ended');
+}
+
+export default function ThreadView({ activeSession, newThreadResetKey, sessions, onFileOpen, onTerminalOutput, activeFileContent, activeFilePath, lastTerminalOutputRef, onDiffReceived, onSessionCreated, onSessionFinished, onModelInfoChanged, onTokenUsageUpdated, onAuthExpired, activeModel, activeContextWindow, activeSessionUsage, codexRuntimeStatus }) {
   const [isTyping, setIsTyping] = useState(false);
+  const [isAwaitingApproval, setIsAwaitingApproval] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('New Thread');
   const [inputValue, setInputValue] = useState('');
+  const [sessionStatusMessage, setSessionStatusMessage] = useState(null);
+  const initialSelectedModel = localStorage.getItem(`axiowl_model_${activeSession || 'new'}`) || '';
   
   const textareaRef = useRef(null);
 
   // Keep track of the active session we are streaming to avoid race conditions
   const streamedSessionUuidRef = useRef(null);
+  const activeRunIdRef = useRef(null);
   // Keep track of the activeSession prop in a ref for callback access
   const activeSessionRef = useRef(activeSession);
   const onSessionCreatedRef = useRef(onSessionCreated);
@@ -230,7 +223,9 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
   const onFileOpenRef = useRef(onFileOpen);
   const onTerminalOutputRef = useRef(onTerminalOutput);
   const onTokenUsageUpdatedRef = useRef(onTokenUsageUpdated);
+  const onAuthExpiredRef = useRef(onAuthExpired);
   const pendingNewSessionPromptRef = useRef('');
+  const loadedThreadKeyRef = useRef(null);
 
   // Keep refs in sync
   useEffect(() => { activeSessionRef.current = activeSession; }, [activeSession]);
@@ -240,20 +235,12 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
   useEffect(() => { onFileOpenRef.current = onFileOpen; }, [onFileOpen]);
   useEffect(() => { onTerminalOutputRef.current = onTerminalOutput; }, [onTerminalOutput]);
   useEffect(() => { onTokenUsageUpdatedRef.current = onTokenUsageUpdated; }, [onTokenUsageUpdated]);
+  useEffect(() => { onAuthExpiredRef.current = onAuthExpired; }, [onAuthExpired]);
 
-  const [models, setModels] = useState([
-    { slug: "gpt-5.4-mini", display_name: "gpt-5.4-mini" },
-    { slug: "gpt-5.5", display_name: "gpt-5.5" },
-    { slug: "gpt-5.4", display_name: "gpt-5.4" },
-    { slug: "gpt-5.3-codex-spark", display_name: "gpt-5.3-codex-spark" },
-    { slug: "gpt-5.3-codex", display_name: "gpt-5.3-codex" },
-    { slug: "gpt-5.2", display_name: "gpt-5.2" }
-  ]);
+  const [models, setModels] = useState([]);
+  const [modelsError, setModelsError] = useState(null);
 
-  const [selectedModel, setSelectedModel] = useState(() => {
-    const saved = localStorage.getItem(`axiowl_model_${activeSession || 'new'}`);
-    return saved || 'gpt-5.4-mini';
-  });
+  const [selectedModel, setSelectedModel] = useState(initialSelectedModel);
 
   const [selectedReasoning, setSelectedReasoning] = useState(() => {
     const saved = localStorage.getItem(`axiowl_reasoning_${activeSession || 'new'}`);
@@ -267,34 +254,77 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
 
   // Fetch dynamic models on mount
   useEffect(() => {
-    fetch('/api/models')
-      .then(r => r.json())
+    desktopApi.getModels()
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setModels(data);
+          setModelsError(null);
+          if (!selectedModel || !data.some((model) => model.slug === selectedModel)) {
+            setSelectedModel(data[0].slug);
+          }
+        } else {
+          setModels([]);
+          setModelsError(appendRuntimeDiagnosticsHint('Codex returned no models.', codexRuntimeStatus));
         }
       })
-      .catch(err => console.error('Failed to fetch models:', err));
-  }, []);
+      .catch(err => {
+        console.error('Failed to fetch models:', err);
+        setModels([]);
+        setModelsError(appendRuntimeDiagnosticsHint(
+          err.message || 'Model catalog unavailable.',
+          codexRuntimeStatus,
+        ));
+      });
+  }, [codexRuntimeStatus]);
 
   useEffect(() => {
-    const saved = localStorage.getItem(`axiowl_model_${activeSession || 'new'}`);
-    setSelectedModel(saved || 'gpt-5.4-mini');
+    const currentUuid = activeSession || 'new';
+    const savedModel = localStorage.getItem(`axiowl_model_${currentUuid}`);
+    if (savedModel && models.some((model) => model.slug === savedModel)) {
+      setSelectedModel(savedModel);
+    } else if (models.length > 0) {
+      const fallbackModel = models[0].slug;
+      setSelectedModel(fallbackModel);
+      localStorage.setItem(`axiowl_model_${currentUuid}`, fallbackModel);
+    } else {
+      setSelectedModel('');
+    }
 
     const savedReasoning = localStorage.getItem(`axiowl_reasoning_${activeSession || 'new'}`);
     setSelectedReasoning(savedReasoning || 'default');
 
     const savedSpeed = localStorage.getItem(`axiowl_speed_${activeSession || 'new'}`);
     setSelectedSpeed(savedSpeed || 'default');
-  }, [activeSession]);
+  }, [activeSession, models]);
 
   useEffect(() => {
     const activeModelObj = models.find(m => m.slug === selectedModel);
-    const context = activeModelObj ? activeModelObj.context_window : 272000;
+    const context = activeModelObj?.context_window ?? null;
     if (onModelInfoChanged) {
-      onModelInfoChanged(selectedModel, context);
+      onModelInfoChanged(selectedModel || null, context);
     }
   }, [selectedModel, models, onModelInfoChanged]);
+
+  const syncThreadFromHistory = async (sessionId) => {
+    if (!sessionId) return;
+    const messages = await desktopApi.readSessionHistory(sessionId);
+    runtime.thread.reset(mapHistoryMessages(messages, sessionId));
+    setSessionStatusMessage(null);
+  };
+
+  useEffect(() => {
+    if (activeSession !== null) {
+      return;
+    }
+    streamedSessionUuidRef.current = null;
+    activeRunIdRef.current = null;
+    loadedThreadKeyRef.current = '__new__';
+    setSessionTitle('New Thread');
+    setSessionStatusMessage(null);
+    setIsTyping(false);
+    setIsAwaitingApproval(false);
+    runtime.thread.reset([]);
+  }, [activeSession, newThreadResetKey]);
 
   const runtime = useLocalRuntime({
     async *run({ messages }) {
@@ -321,38 +351,63 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
       const enrichedPrompt = contextPrefix ? `${contextPrefix}${prompt}` : prompt;
 
       const currentUuid = activeSessionRef.current || streamedSessionUuidRef.current || 'new';
-      const currentModel =
-        localStorage.getItem(`axiowl_model_${currentUuid}`) || 'gpt-5.4-mini';
+      const storedModel = localStorage.getItem(`axiowl_model_${currentUuid}`);
+      const currentModel = storedModel && models.some((model) => model.slug === storedModel)
+        ? storedModel
+        : selectedModel || models[0]?.slug || null;
       const currentReasoning =
         localStorage.getItem(`axiowl_reasoning_${currentUuid}`) || 'default';
       const currentSpeed =
         localStorage.getItem(`axiowl_speed_${currentUuid}`) || 'default';
 
       const queue = new AsyncQueue();
-      console.log('[ThreadView] Connecting EventSource with uuid:', currentUuid, 'model:', currentModel, 'reasoning:', currentReasoning, 'speed:', currentSpeed);
-      const eventSource = new EventSource(
-        `/api/exec?prompt=${encodeURIComponent(enrichedPrompt)}&sessionUuid=${encodeURIComponent(currentUuid)}&model=${encodeURIComponent(currentModel)}&reasoning=${encodeURIComponent(currentReasoning)}&speed=${encodeURIComponent(currentSpeed)}`
-      );
-
-      eventSource.onmessage = (e) => {
-        queue.push(JSON.parse(e.data));
-      };
-      eventSource.onerror = (err) => {
-        queue.push({ type: 'error', error: err });
-      };
+      let unlisten = null;
+      let currentRunId = null;
+      try {
+        setIsAwaitingApproval(false);
+        unlisten = await desktopApi.onCodexEvent((envelope) => {
+          if (!currentRunId || envelope.runId === currentRunId) {
+            queue.push(desktopApi.normalizeCodexEvent(envelope));
+          }
+        });
+        const started = await desktopApi.executePrompt({
+          prompt: enrichedPrompt,
+          sessionUuid: currentUuid,
+          model: currentModel,
+          reasoning: currentReasoning,
+          speed: currentSpeed,
+        });
+        currentRunId = started.runId;
+        activeRunIdRef.current = currentRunId;
+      } catch (err) {
+        if (unlisten) unlisten();
+        setIsTyping(false);
+        if (isAuthExpiredError(err.message || err)) {
+          onAuthExpiredRef.current?.(err.message || String(err));
+        }
+        const launchError = appendRuntimeDiagnosticsHint(
+          err.message || 'Could not launch codex CLI.',
+          codexRuntimeStatus,
+        );
+        yield {
+          content: [{ type: 'text', text: `> **Error**: ${launchError}` }],
+        };
+        return;
+      }
 
       let fullResponse = '';
       try {
         while (true) {
           const event = await queue.pop();
-          console.log('[ThreadView] SSE event in generator:', event.type, event);
 
           if (event.type === 'thread.started') {
             const newUuid = event.thread_id;
             streamedSessionUuidRef.current = newUuid;
 
-            const modelToSave = localStorage.getItem('axiowl_model_new') || 'gpt-5.4-mini';
-            localStorage.setItem(`axiowl_model_${newUuid}`, modelToSave);
+            const modelToSave = localStorage.getItem('axiowl_model_new') || currentModel;
+            if (modelToSave) {
+              localStorage.setItem(`axiowl_model_${newUuid}`, modelToSave);
+            }
 
             const reasoningToSave = localStorage.getItem('axiowl_reasoning_new') || 'default';
             localStorage.setItem(`axiowl_reasoning_${newUuid}`, reasoningToSave);
@@ -361,7 +416,6 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
             localStorage.setItem(`axiowl_speed_${newUuid}`, speedToSave);
 
             if (!activeSessionRef.current && onSessionCreatedRef.current) {
-              console.log('[ThreadView] Calling onSessionCreated for:', newUuid);
               onSessionCreatedRef.current(newUuid, pendingNewSessionPromptRef.current);
             }
           } else if (event.type === 'message') {
@@ -380,7 +434,9 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               yield { content: [{ type: 'text', text: fullResponse }] };
             }
           } else if (event.type === 'approval_request') {
-            fullResponse += `\n\n> **Action Required**: Codex wants to run \`${event.command}\`.\n\nType **Approve** to authorize this action.\n`;
+            setIsAwaitingApproval(true);
+            const commandLabel = event.command || 'a protected command';
+            fullResponse += `\n\n> **Action Required**: Codex wants to run \`${commandLabel}\`.\n\nType **Approve** to authorize this action.\n`;
             yield { content: [{ type: 'text', text: fullResponse }] };
           } else if (event.type === 'diff') {
             if (onDiffReceivedRef.current) onDiffReceivedRef.current(event);
@@ -389,97 +445,154 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               onFileOpenRef.current(event.absolutePath);
             }
             fullResponse += `\n\n> **File Changed**: \`${event.file}\` - opened in editor.\n`;
+            yield { content: [{ type: 'text', text: fullResponse }] };
           } else if (event.type === 'terminal_output') {
             const cmd = event.command ? `$ ${event.command}` : '';
-            const out = event.output || '';
+            const out = typeof event.output === 'string'
+              ? event.output
+              : String(event.output ?? '');
             const termText = [cmd, out].filter(Boolean).join('\n');
             // Accumulate terminal output for next context injection
             if (onTerminalOutputRef.current) onTerminalOutputRef.current(termText);
             if (lastTerminalOutputRef) lastTerminalOutputRef.current = termText;
             // Show inline as a collapsible terminal block
             if (cmd || out) {
+              if (event.status === 'declined') {
+                fullResponse += `\n\n> **Command Blocked**: Codex policy rejected \`${event.command || 'the requested command'}\`.\n`;
+              } else if (event.status === 'failed') {
+                fullResponse += `\n\n> **Command Failed**: \`${event.command || 'shell command'}\` exited with status ${event.exit_code ?? 'unknown'}.\n`;
+              }
               fullResponse += `\n\n<details><summary>Terminal: <code>${event.command || 'shell'}</code></summary>\n\n\`\`\`\n${out}\n\`\`\`\n</details>\n`;
               yield { content: [{ type: 'text', text: fullResponse }] };
             }
-          } else if (event.type === 'turn.completed' && event.usage) {
-            const usage = event.usage;
-            const totalUsed = (usage.input_tokens || 0) + (usage.output_tokens || 0);
-            localStorage.setItem(`axiowl_usage_${currentUuid}`, totalUsed);
+          } else if (event.type === 'token_count') {
+            const totalUsed = event.info?.total_token_usage?.total_tokens
+              ?? (
+                ((event.info?.total_token_usage?.input_tokens) || 0)
+                + ((event.info?.total_token_usage?.output_tokens) || 0)
+              );
             if (onTokenUsageUpdatedRef.current) {
               onTokenUsageUpdatedRef.current(totalUsed);
             }
+          } else if (event.type === 'stderr_message') {
+            if (isAuthExpiredError(event.content)) {
+              onAuthExpiredRef.current?.(event.content);
+            }
           } else if (event.type === 'end') {
-            eventSource.close();
             setIsTyping(false);
+            setIsAwaitingApproval(false);
+            activeRunIdRef.current = null;
+            const completedSessionId = activeSessionRef.current || streamedSessionUuidRef.current;
+              if (completedSessionId) {
+                try {
+                  await syncThreadFromHistory(completedSessionId);
+                } catch (historyError) {
+                  console.error('Failed to refresh completed session history:', historyError);
+                  setSessionStatusMessage(
+                    `Could not refresh completed session history. ${historyError.message || 'History reload failed.'}`
+                  );
+                }
+              }
             if (onSessionFinishedRef.current) onSessionFinishedRef.current();
             break;
-          } else if (event.type === 'error') {
-            eventSource.close();
+          } else if (event.type === 'cancelled') {
             setIsTyping(false);
+            setIsAwaitingApproval(false);
+            activeRunIdRef.current = null;
+            const completedSessionId = activeSessionRef.current || streamedSessionUuidRef.current;
+              if (completedSessionId) {
+                try {
+                  await syncThreadFromHistory(completedSessionId);
+                } catch (historyError) {
+                  console.error('Failed to refresh cancelled session history:', historyError);
+                  setSessionStatusMessage(
+                    `Could not refresh cancelled session history. ${historyError.message || 'History reload failed.'}`
+                  );
+                }
+              }
             if (onSessionFinishedRef.current) onSessionFinishedRef.current();
-            fullResponse += `\n\n> **Error**: Connection to codex stream lost.`;
+            if (fullResponse.trim()) {
+              fullResponse += '\n\n> **Cancelled**: Run stopped before completion.';
+              yield { content: [{ type: 'text', text: fullResponse }] };
+            } else {
+              runtime.thread.append({
+                role: 'assistant',
+                content: [{ type: 'text', text: '> **Cancelled**: Run stopped before completion.' }]
+              });
+            }
+            break;
+          } else if (event.type === 'error' || event.type === 'turn.failed') {
+            setIsTyping(false);
+            setIsAwaitingApproval(false);
+            activeRunIdRef.current = null;
+            const completedSessionId = activeSessionRef.current || streamedSessionUuidRef.current;
+              if (completedSessionId) {
+                try {
+                  await syncThreadFromHistory(completedSessionId);
+                } catch (historyError) {
+                  console.error('Failed to refresh errored session history:', historyError);
+                  setSessionStatusMessage(
+                    `Could not refresh session history after the error. ${historyError.message || 'History reload failed.'}`
+                  );
+                }
+              }
+            if (onSessionFinishedRef.current) onSessionFinishedRef.current();
+            const errorText =
+              event.error?.message ||
+              event.error ||
+              event.message ||
+              'Connection to codex stream lost.';
+            const displayError = appendRuntimeDiagnosticsHint(errorText, codexRuntimeStatus);
+            if (isAuthExpiredError(errorText)) {
+              onAuthExpiredRef.current?.(errorText);
+            }
+            fullResponse += `\n\n> **Error**: ${displayError}`;
             yield { content: [{ type: 'text', text: fullResponse }] };
             break;
           }
         }
       } finally {
-        eventSource.close();
+        if (unlisten) unlisten();
         setIsTyping(false);
+        setIsAwaitingApproval(false);
       }
     }
   });
 
   // Sync activeSession prop -> load history
   useEffect(() => {
-    console.log('[ThreadView] activeSession changed:', { 
-      activeSession, 
-      streamedSessionUuid: streamedSessionUuidRef.current 
-    });
-
     // If activeSession matches the session we are actively streaming, do not reset
     if (activeSession && activeSession === streamedSessionUuidRef.current) {
-      console.log('[ThreadView] activeSession matches streamedSessionUuid, skipping reload');
       return;
     }
+
+    const targetThreadKey = activeSession || '__new__';
+    if (loadedThreadKeyRef.current === targetThreadKey) {
+      return;
+    }
+    loadedThreadKeyRef.current = targetThreadKey;
 
     // Reset the stream ref as we are transitioning to a different session
     streamedSessionUuidRef.current = null;
 
-    if (activeSession) {
-      console.log('[ThreadView] Loading history for session:', activeSession);
-      fetch('/api/sessions')
-        .then((r) => r.json())
-        .then((data) => {
-          const s = data.find((x) => x.uuid === activeSession);
-          if (s) setSessionTitle(s.title);
-        })
-        .catch(() => {});
+      if (activeSession) {
+        desktopApi.getSessions()
+          .then((data) => {
+            const s = data.find((x) => x.uuid === activeSession);
+            if (s) setSessionTitle(s.title);
+          })
+        .catch((err) => console.error('Failed to load session list for active session:', err));
 
-      fetch(`/api/sessions/read?sessionUuid=${activeSession}`)
-        .then((res) => res.json())
-        .then((msgs) => {
-          // Construct a linear tree chain of messages where each points to the previous one as parent.
-          // This prevents the assistant-ui "Parent message not found" internal error.
-          let lastId = null;
-          const mapped = msgs.map((m, idx) => {
-            const currentId = `msg-${idx}-${activeSession}`;
-            const msg = {
-              id: currentId,
-              parentId: lastId,
-              role: m.role,
-              content: (m.content && Array.isArray(m.content) && m.content[0]) 
-                ? m.content 
-                : [{ type: 'text', text: typeof m.content === 'string' ? m.content : '' }]
-            };
-            lastId = currentId;
-            return msg;
-          });
-          runtime.thread.reset(mapped);
-        })
-        .catch((err) => console.error('Failed to load session history:', err));
+      syncThreadFromHistory(activeSession)
+        .catch((err) => {
+          console.error('Failed to load session history:', err);
+          setSessionStatusMessage(
+            `Could not load session history for this thread. ${err.message || 'History read failed.'}`
+          );
+        });
     } else {
-      console.log('[ThreadView] Clearing history for New Thread');
       setSessionTitle('New Thread');
+      setSessionStatusMessage(null);
       runtime.thread.reset([]);
     }
   }, [activeSession, runtime]);
@@ -490,27 +603,10 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
     const isRunning = sessions?.find(s => s.uuid === activeSession)?.isRunning || false;
     if (!isRunning) return;
 
-    console.log('[ThreadView] Active session is running in background, starting polling interval...');
-
     const fetchHistory = () => {
-      fetch(`/api/sessions/read?sessionUuid=${activeSession}`)
-        .then((res) => res.json())
+      desktopApi.readSessionHistory(activeSession)
         .then((msgs) => {
-          let lastId = null;
-          const mapped = msgs.map((m, idx) => {
-            const currentId = `msg-${idx}-${activeSession}`;
-            const msg = {
-              id: currentId,
-              parentId: lastId,
-              role: m.role,
-              content: (m.content && Array.isArray(m.content) && m.content[0]) 
-                ? m.content 
-                : [{ type: 'text', text: typeof m.content === 'string' ? m.content : '' }]
-            };
-            lastId = currentId;
-            return msg;
-          });
-
+          const mapped = mapHistoryMessages(msgs, activeSession);
           // Only reset if history has changed to avoid screen flickering
           const currentMsgs = runtime.thread.messages;
           let changed = mapped.length !== currentMsgs.length;
@@ -522,11 +618,16 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
             }
           }
           if (changed) {
-            console.log('[ThreadView] Background execution updated history, resetting thread messages.');
             runtime.thread.reset(mapped);
           }
+          setSessionStatusMessage(null);
         })
-        .catch(() => {});
+        .catch((err) => {
+          console.error('Failed to poll background session history:', err);
+          setSessionStatusMessage(
+            `Could not refresh background session history. ${err.message || 'History polling failed.'}`
+          );
+        });
     };
 
     const interval = setInterval(fetchHistory, 2000);
@@ -543,26 +644,33 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
 
   const handleSend = (overrideText) => {
     const text = typeof overrideText === 'string' ? overrideText.trim() : inputValue.trim();
-    if (!text || isTyping) return;
+    const isApprovalReply = isAwaitingApproval && text.toLowerCase() === 'approve';
+    if (!text) return;
+    if (isTyping && !isApprovalReply) return;
 
-    const currentUuid = activeSession || streamedSessionUuidRef.current || 'new';
-
-    if (text.toLowerCase() === 'approve') {
+    if (isApprovalReply) {
       runtime.thread.append({ role: 'user', content: [{ type: 'text', text: 'Approve' }] });
       setIsTyping(true);
+      setIsAwaitingApproval(false);
 
-      fetch('/api/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionUuid: currentUuid }),
-      })
-      .then(res => res.json())
+      const runId = activeRunIdRef.current;
+        if (!runId) {
+          runtime.thread.append({
+            role: 'assistant',
+            content: [{ type: 'text', text: '\n\n> **Error**: No active run is currently waiting for approval input.' }]
+          });
+          setIsTyping(false);
+          setInputValue('');
+          return;
+      }
+
+      desktopApi.approveRun(runId)
       .then(data => {
         if (!data.success) {
           // If approval request failed on the backend, append the error to UI
           runtime.thread.append({
             role: 'assistant',
-            content: [{ type: 'text', text: '\n\n> **Error**: Failed to send approval.' }]
+            content: [{ type: 'text', text: '\n\n> **Error**: Approval could not be sent to the active Codex run.' }]
           });
           setIsTyping(false);
         }
@@ -570,6 +678,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
       .catch((err) => {
         console.error(err);
         setIsTyping(false);
+        setIsAwaitingApproval(false);
       });
     } else {
       runtime.thread.append({ role: 'user', content: [{ type: 'text', text }] });
@@ -581,14 +690,22 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
     }
   };
 
-  const handleSelectPrompt = (promptText) => {
-    setInputValue(promptText);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-      handleSend(promptText);
-    }, 100);
+  const handleCancelRun = () => {
+    const runId = activeRunIdRef.current;
+    if (!runId) return;
+    setIsAwaitingApproval(false);
+    desktopApi.cancelRun(runId)
+      .catch((err) => {
+        console.error('[ThreadView] Failed to cancel run:', err);
+        runtime.thread.append({
+          role: 'assistant',
+          content: [{ type: 'text', text: `\n\n> **Error**: ${err.message || 'The active Codex run could not be cancelled.'}` }]
+        });
+        activeRunIdRef.current = null;
+        setIsTyping(false);
+        setIsAwaitingApproval(false);
+        if (onSessionFinishedRef.current) onSessionFinishedRef.current();
+      });
   };
 
   const handleKeyDown = (e) => {
@@ -608,11 +725,17 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               <Loader2 size={12} className="spin" /> Agent Working
             </span>
           )}
+          {isTyping && (
+            <button className="stop-run-btn" onClick={handleCancelRun} title="Stop active run">
+              <Square size={12} /> Stop
+            </button>
+          )}
         </div>
         <div className="model-selector-container">
           <select
             className="model-selector"
             value={selectedModel}
+            disabled={models.length === 0}
             onChange={(e) => {
               const model = e.target.value;
               setSelectedModel(model);
@@ -620,6 +743,7 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
               localStorage.setItem(`axiowl_model_${currentUuid}`, model);
             }}
           >
+            {models.length === 0 && <option value="">Models unavailable</option>}
             {models.map(m => (
               <option key={m.slug} value={m.slug}>
                 {m.display_name || m.slug}
@@ -658,11 +782,21 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
             <option value="fast">Fast</option>
           </select>
         </div>
+        {modelsError && (
+          <span className="usage-text-muted models-error-message">
+            {modelsError}
+          </span>
+        )}
       </div>
+      {sessionStatusMessage && (
+        <div className="thread-status-banner error">
+          {sessionStatusMessage}
+        </div>
+      )}
 
       <AssistantRuntimeProvider runtime={runtime}>
         <ThreadPrimitive.Root className="assistant-ui-wrapper">
-          <ThreadContent onSelectPrompt={handleSelectPrompt} />
+          <ThreadContent />
 
           {/* Chat input dock */}
           <div className="chat-input-dock">
@@ -671,17 +805,17 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
                 <textarea
                   ref={textareaRef}
                   className="chat-textarea"
-                  placeholder="Message AxiOwl... (Enter to send, Shift+Enter for newline)"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   rows={1}
-                  disabled={isTyping}
+                  disabled={isTyping && !isAwaitingApproval}
+                  aria-label="Message AxiOwl"
                 />
                 <button
                   className={`send-btn ${inputValue.trim() && !isTyping ? 'active' : ''}`}
                   onClick={() => handleSend()}
-                  disabled={!inputValue.trim() || isTyping}
+                  disabled={!inputValue.trim() || (isTyping && !isAwaitingApproval)}
                   title="Send message"
                 >
                   {isTyping ? (
@@ -692,17 +826,43 @@ export default function ThreadView({ activeSession, sessions, onFileOpen, onTerm
                 </button>
               </div>
               <p className="chat-hint">
-                {isTyping
-                  ? 'Agent is working...'
-                  : 'Powered by AxiOwl - Type "Approve" to authorize actions'}
+                {isAwaitingApproval
+                  ? 'Approval requested above. Type "Approve" to continue.'
+                  : isTyping
+                    ? 'Agent is working...'
+                    : 'Powered by AxiOwl'}
               </p>
-              <div className="chat-input-usage">
-                <span className="chat-usage-model">{activeModel || 'gpt-5.4-mini'}</span>
-                <span className="chat-usage-divider">-</span>
-                <span className="chat-usage-tokens">{(activeSessionUsage || 0).toLocaleString()} / {(activeContextWindow || 272000).toLocaleString()} tokens</span>
-                <span className="chat-usage-divider">-</span>
-                <span className="chat-usage-remaining">{Math.max(0, (activeContextWindow || 272000) - (activeSessionUsage || 0)).toLocaleString()} remaining</span>
-              </div>
+              {(activeModel || activeSessionUsage != null || activeContextWindow != null) && (
+                <div className="chat-input-usage">
+                  {activeModel && (
+                    <span className="chat-usage-model">{activeModel}</span>
+                  )}
+                  {activeModel && (activeSessionUsage != null || activeContextWindow != null) && (
+                    <span className="chat-usage-divider">-</span>
+                  )}
+                  {activeSessionUsage != null && activeContextWindow != null && (
+                    <>
+                      <span className="chat-usage-tokens">
+                        {activeSessionUsage.toLocaleString()} / {activeContextWindow.toLocaleString()} tokens
+                      </span>
+                      <span className="chat-usage-divider">-</span>
+                      <span className="chat-usage-remaining">
+                        {Math.max(0, activeContextWindow - activeSessionUsage).toLocaleString()} remaining
+                      </span>
+                    </>
+                  )}
+                  {activeSessionUsage == null && activeContextWindow != null && (
+                    <span className="chat-usage-tokens">
+                      Context window {activeContextWindow.toLocaleString()} tokens
+                    </span>
+                  )}
+                  {activeSessionUsage != null && activeContextWindow == null && (
+                    <span className="chat-usage-tokens">
+                      {activeSessionUsage.toLocaleString()} tokens used
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </ThreadPrimitive.Root>

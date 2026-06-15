@@ -1,5 +1,10 @@
 node_modules/
 dist/
-dist_electron/
+src-tauri/target/
 *.log
 .DS_Store
+.claude/
+release-download/
+output/
+AGENTS.md
+CLAUDE.md

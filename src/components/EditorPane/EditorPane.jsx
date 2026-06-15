@@ -7,7 +7,13 @@ import { css } from '@codemirror/lang-css';
 import { json } from '@codemirror/lang-json';
 import { markdown } from '@codemirror/lang-markdown';
 import { python } from '@codemirror/lang-python';
+import { desktopApi } from '../../lib/desktopApi';
 import './EditorPane.css';
+
+function actionError(prefix, error, fallback) {
+  const detail = error?.message || fallback;
+  return `${prefix} ${detail}`;
+}
 
 function getLanguageExtension(filePath) {
   if (!filePath) return [];
@@ -81,27 +87,47 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
   const [workspaceRoot, setWorkspaceRoot] = useState('');
   const [currentDir, setCurrentDir] = useState('');
   const [dirHistory, setDirHistory] = useState([]);
+  const [loadErrors, setLoadErrors] = useState([]);
 
   useEffect(() => {
     setCurrentDir('');
     setDirHistory([]);
 
-    fetch('/api/workspaces')
-      .then(res => res.json())
-      .then(data => {
-        setWorkspaceRoot(data.root || '');
-      })
-      .catch(() => {});
+    Promise.allSettled([
+      desktopApi.getWorkspaces(),
+      desktopApi.getWorkspaceFiles(),
+    ]).then(([workspacesResult, filesResult]) => {
+      const nextErrors = [];
 
-    fetch('/api/workspace/files')
-      .then(res => res.json())
-      .then(data => setFiles(data))
-      .catch(() => {});
+      if (workspacesResult.status === 'fulfilled') {
+        setWorkspaceRoot(workspacesResult.value.root || '');
+      } else {
+        console.error('Failed to load workspace root:', workspacesResult.reason);
+        nextErrors.push(actionError(
+          'Could not determine the active workspace root.',
+          workspacesResult.reason,
+          'Workspace root lookup failed.',
+        ));
+      }
+
+      if (filesResult.status === 'fulfilled') {
+        setFiles(filesResult.value);
+      } else {
+        console.error('Failed to load workspace files:', filesResult.reason);
+        nextErrors.push(actionError(
+          'Could not list files in the active workspace.',
+          filesResult.reason,
+          'Workspace file listing failed.',
+        ));
+      }
+
+      setLoadErrors(nextErrors);
+    });
   }, [refreshTrigger]);
 
   // Local edit state per tab: path -> content string
   const [editContents, setEditContents] = useState({});
-  const [saveState, setSaveState] = useState({}); // path -> 'saved' | 'error' | null
+  const [saveState, setSaveState] = useState({}); // path -> { kind: 'saved' | 'error', message?: string } | null
 
   const lastContentsRef = useRef({});
 
@@ -197,10 +223,23 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
     const content = editContents[activeFilePath] ?? activeTab?.content ?? '';
     try {
       await onFileSave(activeFilePath, content);
-      setSaveState(prev => ({ ...prev, [activeFilePath]: 'saved' }));
+      setSaveState(prev => ({
+        ...prev,
+        [activeFilePath]: { kind: 'saved', message: 'File saved successfully.' },
+      }));
       setTimeout(() => setSaveState(prev => ({ ...prev, [activeFilePath]: null })), 2000);
-    } catch {
-      setSaveState(prev => ({ ...prev, [activeFilePath]: 'error' }));
+    } catch (err) {
+      setSaveState(prev => ({
+        ...prev,
+        [activeFilePath]: {
+          kind: 'error',
+          message: actionError(
+            `Could not save ${activeTab?.name || 'the active file'}.`,
+            err,
+            'Save operation failed.',
+          ),
+        },
+      }));
       setTimeout(() => setSaveState(prev => ({ ...prev, [activeFilePath]: null })), 3000);
     }
   }, [activeFilePath, editContents, activeTab, onFileSave]);
@@ -249,11 +288,11 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
                 {activeTab.path}
               </span>
               <div className="editor-toolbar-actions">
-                {sv === 'saved' && (
-                  <span className="save-status saved"><CheckCircle size={13} /> Saved</span>
+                {sv?.kind === 'saved' && (
+                  <span className="save-status saved" title={sv.message}><CheckCircle size={13} /> Saved</span>
                 )}
-                {sv === 'error' && (
-                  <span className="save-status error"><AlertCircle size={13} /> Save failed</span>
+                {sv?.kind === 'error' && (
+                  <span className="save-status error" title={sv.message}><AlertCircle size={13} /> Save failed</span>
                 )}
                 <span className="editor-lang-badge">{getLanguage(activeTab.path)}</span>
                 <button
@@ -317,6 +356,9 @@ export default function EditorPane({ openFiles, activeFilePath, onTabSelect, onT
           </div>
         </div>
         <div className="editor-files-list">
+          {loadErrors.length > 0 && (
+            <div className="no-files-hint">{loadErrors.join(' ')}</div>
+          )}
           {/* Folders */}
           {displayFolders.map(folder => (
             <div
